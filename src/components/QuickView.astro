@@ -1,0 +1,67 @@
+---
+// Version rapide pour les recruteurs pressés : toutes les réponses d'un coup, sans animation.
+// Visible par défaut, donc lisible même sans JavaScript ; le script de la page la masque au démarrage.
+import { topics } from "../data/agents";
+---
+
+<section class="quick" id="quick" aria-labelledby="quick-title">
+  <h2 id="quick-title">Aurélien Moignet, en bref</h2>
+  <div class="grid">
+    {topics.map((t) => (
+      <div>
+        <h3>{t.title}</h3>
+        <ul>
+          {t.subs.map((s) => (
+            <li>
+              <strong>{s.title}</strong>
+              <span set:html={s.html} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+</section>
+
+<style>
+  .quick {
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 16px;
+    padding: 28px clamp(18px, 4vw, 40px) 36px;
+  }
+  h2 {
+    margin: 0 0 22px;
+    font-weight: 800;
+    font-size: 32px;
+    letter-spacing: -0.02em;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 28px 40px;
+  }
+  h3 {
+    margin: 0 0 10px;
+    font: 500 11px/1 var(--f-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  li span {
+    display: block;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  li :global(a) {
+    color: var(--fg);
+  }
+</style>

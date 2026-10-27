@@ -1,0 +1,84 @@
+---
+import Base from "../layouts/Base.astro";
+import AgentTree from "../components/AgentTree.astro";
+import QuickView from "../components/QuickView.astro";
+---
+
+<Base
+  title="Aurélien Moignet · Ingénieur logiciel full-stack"
+  description="Ingénieur logiciel full-stack, spécialisé dans les systèmes multi-agents. Disponible en septembre 2027, en France ou en Suisse."
+>
+  <div class="wrap">
+    <header>
+      <div class="who">
+        <h1>Aurélien Moignet</h1>
+        <p>
+          <b>Ingénieur logiciel full-stack.</b> Je construis des systèmes multi-agents. Disponible
+          en septembre 2027, en France ou en Suisse.
+        </p>
+      </div>
+      <button class="btn" id="mode" type="button" aria-pressed="false" hidden>
+        Version rapide
+      </button>
+    </header>
+
+    <main>
+      <AgentTree />
+      <QuickView />
+    </main>
+  </div>
+</Base>
+
+<script>
+  // Sans JavaScript, seule la version rapide s'affiche. Avec, on montre l'arbre et le bouton de bascule.
+  const tree = document.getElementById("tree")!;
+  const quick = document.getElementById("quick")!;
+  const mode = document.getElementById("mode")!;
+  tree.hidden = false;
+  quick.hidden = true;
+  mode.hidden = false;
+  mode.addEventListener("click", () => {
+    const showQuick = mode.getAttribute("aria-pressed") !== "true";
+    mode.setAttribute("aria-pressed", String(showQuick));
+    tree.hidden = showQuick;
+    quick.hidden = !showQuick;
+    mode.textContent = showQuick ? "Revenir aux agents" : "Version rapide";
+  });
+</script>
+
+<style>
+  .wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-block: 32px 64px;
+    padding-inline: max(16px, env(safe-area-inset-left, 0px))
+      max(16px, env(safe-area-inset-right, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+  }
+  h1 {
+    margin: 0;
+    font-weight: 800;
+    font-size: clamp(34px, 5.5vw, 56px);
+    line-height: 1;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+  .who p {
+    margin: 10px 0 0;
+    color: var(--muted);
+    max-width: 60ch;
+  }
+  .who b {
+    color: var(--fg);
+    font-weight: 500;
+  }
+</style>

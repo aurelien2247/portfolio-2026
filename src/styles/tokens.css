@@ -1,0 +1,44 @@
+/* Design tokens. Toutes les couleurs du site passent par ici, en clair et en sombre. */
+:root {
+  --bg: #f3f4f6;
+  --stage: #fafafb;
+  --dots: #cbd0d7;
+  --fg: #15181c;
+  --muted: #586070;
+  --card: #ffffff;
+  --line: #dce0e5;
+  --edge: #b4bbc6;
+  --outline: #15181c;
+  --orch: #15181c;
+  --c-projets: #4c7be0;
+  --c-parcours: #ec8a47;
+  --c-stack: #3aa57b;
+  --c-contact: #db6a9e;
+  --navy: #1f3b6e;
+  --accent: #f2b93b;
+
+  --f-ui: "Schibsted Grotesk", system-ui, sans-serif;
+  --f-hand: "Patrick Hand", "Comic Sans MS", cursive;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101216;
+    --stage: #15181d;
+    --dots: #2c323b;
+    --fg: #eceef1;
+    --muted: #9aa3af;
+    --card: #1e232a;
+    --line: #2a3038;
+    --edge: #3e4650;
+    --outline: #0a0b0d;
+    --orch: #3a414b;
+    --c-projets: #6a92ea;
+    --c-parcours: #f09a5e;
+    --c-stack: #4db88d;
+    --c-contact: #e57fae;
+    --navy: #2b4c86;
+    color-scheme: dark;
+  }
+}
