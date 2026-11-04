@@ -1,19 +1,63 @@
 ---
 import "../styles/global.css";
+import { HOME, LANGS, type Lang } from "../i18n";
 
 interface Props {
+  lang: Lang;
   title: string;
   description: string;
 }
-const { title, description } = Astro.props;
+const { lang, title, description } = Astro.props;
+
+// Google veut des adresses complètes pour les versions de langue : elles partent de `site`
+// (astro.config.mjs). Tant qu'il n'est pas renseigné, on garde des chemins relatifs.
+const url = (l: Lang) => (Astro.site ? new URL(HOME[l], Astro.site).href : HOME[l]);
 ---
 
-<html lang="fr">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Première visite : on suit la langue du navigateur (français, sinon anglais).
+         Dès qu'on clique sur FR ou EN, ce choix est retenu et passe avant.
+         On ne redirige jamais : quand on arrive d'une autre page du site (on vient de choisir la langue,
+         même si le navigateur n'a pas pu la retenir), ni les robots des moteurs de recherche, qui
+         doivent pouvoir lire les deux versions.
+         Ce script tourne avant l'affichage : il choisit aussi la vue à montrer. -->
+    <script is:inline>
+      (() => {
+        let saved = null;
+        try {
+          saved = localStorage.getItem("lang");
+        } catch {}
+        if (saved !== "fr" && saved !== "en") saved = null;
+        const browser = (navigator.languages?.[0] || navigator.language || "").toLowerCase();
+        const want = saved || (browser.startsWith("fr") ? "fr" : "en");
+        const fromSite = document.referrer.startsWith(location.origin + "/");
+        const robot = /bot|crawl|spider|slurp|lighthouse/i.test(navigator.userAgent);
+        if (want !== document.documentElement.lang && !fromSite && !robot) {
+          location.replace(want === "en" ? "/en/" : "/");
+          return;
+        }
+        // Avant le premier affichage : l'arbre au lieu de la version rapide (voir Home.astro),
+        // ou la version rapide si on l'avait ouverte avant de changer de langue
+        const root = document.documentElement;
+        root.classList.add("js");
+        try {
+          if (sessionStorage.getItem("quick") === "true") root.classList.add("show-quick");
+          sessionStorage.removeItem("quick");
+        } catch {}
+      })();
+    </script>
     <meta name="description" content={description} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {LANGS.map((l) => (
+      <link rel="alternate" hreflang={l} href={url(l)} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={url("fr")} />
+    {Astro.site && <link rel="canonical" href={url(lang)} />}
+    <!-- L'icône de l'onglet : ma photo en rond ; en carré pour l'écran d'accueil d'un iPhone -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

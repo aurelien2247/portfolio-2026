@@ -1,0 +1,164 @@
+/* Smash : le vrai jeu sur Sextant. Chargé avec la démo, quand sa fiche s'ouvre (voir projects.ts). */
+
+/* Smash pour de vrai : l'écran VGA de v86 (320 × 200 agrandi en gros pixels), et les touches dessous */
+.agent-tree .sxt {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.agent-tree .sxt-screen {
+  position: relative;
+  aspect-ratio: 320 / 200;
+  overflow: hidden;
+  background: var(--bg);
+  border: var(--bw) solid var(--frame);
+  border-radius: 6px 8px 5px 7px;
+  outline: none;
+}
+.agent-tree .sxt-screen.is-playing {
+  border-color: var(--accent);
+}
+.agent-tree .sxt-screen canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  image-rendering: pixelated;
+}
+/* Le mode texte (BIOS, démarrage) : v86 écrit 80 × 25 caractères */
+.agent-tree .sxt-text {
+  position: absolute;
+  inset: 0;
+  padding: 6px 8px;
+  overflow: hidden;
+  white-space: pre;
+  font: 11px/12px var(--f-mono);
+  color: var(--console-fg);
+}
+.agent-tree .sxt-cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: var(--bg);
+}
+.agent-tree .sxt-name {
+  margin: 0;
+  font: 700 28px var(--f-mono);
+  letter-spacing: 8px;
+  color: var(--fg);
+}
+.agent-tree .sxt-weight {
+  margin: 0;
+  font: 11px var(--f-mono);
+  color: var(--muted);
+}
+.agent-tree .sxt-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  translate: -50% 0;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--ink);
+  font: 12px var(--f-mono);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.agent-tree .sxt-keys {
+  display: grid;
+  gap: 8px;
+  font: 12px var(--f-mono);
+  color: var(--muted);
+}
+.agent-tree .sxt-keys p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  margin: 0;
+}
+.agent-tree .sxt-keys b {
+  color: var(--fg);
+}
+.agent-tree .sxt-keys kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  margin-right: 3px;
+  padding: 0 4px;
+  border: 2px solid var(--frame);
+  border-bottom-width: 3px;
+  border-radius: 5px;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+}
+
+/* Sur écran tactile : une manette par joueur, sous l'écran (même dessin que les touches du clavier) */
+.agent-tree .sxt-pads {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.agent-tree .sxt-pad {
+  --who: var(--accent);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 10px 6px 12px;
+  border: var(--bw) solid var(--frame);
+  border-radius: var(--r-hand);
+  background: var(--card);
+}
+.agent-tree .sxt-pad[data-player="2"] {
+  --who: var(--c-contact);
+}
+.agent-tree .sxt-pad b {
+  font: 700 12px var(--f-mono);
+  color: var(--who);
+}
+.agent-tree .sxt-pad div {
+  display: flex;
+  gap: 6px;
+}
+.agent-tree .sxt-pad button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid var(--frame);
+  border-bottom-width: 4px;
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--fg);
+  font: 700 16px var(--f-mono);
+  touch-action: none;
+}
+.agent-tree .sxt-pad button.is-down {
+  border-color: var(--who);
+  border-bottom-width: 2px;
+  background: var(--who);
+  color: var(--ink);
+  translate: 0 2px;
+}
+/* Avant le démarrage, la manette n'envoie rien : on l'éteint un peu */
+.agent-tree .sxt:not(.is-running) .sxt-pads {
+  opacity: 0.45;
+}
+.agent-tree .sxt-pad-hint {
+  margin: -4px 0 0;
+  text-align: center;
+  font: 11px var(--f-mono);
+  color: var(--muted);
+}

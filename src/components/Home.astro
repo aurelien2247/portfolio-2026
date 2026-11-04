@@ -1,0 +1,202 @@
+---
+// La page d'accueil, dans une langue : src/pages/index.astro (français) et src/pages/en/index.astro (anglais).
+import { Image } from "astro:assets";
+import Base from "../layouts/Base.astro";
+import AgentTree from "./AgentTree.astro";
+import QuickView from "./QuickView.astro";
+import photo from "../assets/aurelien.jpg";
+import { HOME, LANGS, ui as uis, type Lang } from "../i18n";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const ui = uis[lang];
+---
+
+<Base lang={lang} title={ui.title} description={ui.description}>
+  <div class="wrap">
+    <header>
+      <Image
+        class="me"
+        src={photo}
+        alt={ui.photoAlt}
+        width={108}
+        height={108}
+        densities={[1, 2]}
+        loading="eager"
+      />
+      <div class="who">
+        <h1>Aurélien Moignet</h1>
+        <p>
+          <mark>{ui.role}</mark>{" "}
+          {ui.intro}
+          <br />
+          {ui.looking}
+        </p>
+      </div>
+      <div class="tools">
+        <!-- Deux liens : le choix marche sans JavaScript ; le script le retient pour les prochaines visites -->
+        <nav class="lang" aria-label={ui.langLabel}>
+          {
+            LANGS.map((l) => (
+              <a
+                href={HOME[l]}
+                hreflang={l}
+                lang={l}
+                data-lang={l}
+                aria-current={l === lang ? "page" : undefined}
+              >
+                {l.toUpperCase()}
+              </a>
+            ))
+          }
+        </nav>
+        <button
+          class="btn"
+          id="mode"
+          type="button"
+          aria-pressed="false"
+          data-on={ui.quickOff}
+          data-off={ui.quickOn}
+        >
+          {ui.quickOn}
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <AgentTree lang={lang} />
+      <QuickView lang={lang} />
+    </main>
+  </div>
+</Base>
+
+<script>
+  // La vue (arbre ou version rapide) est une classe sur <html>, posée avant le premier affichage par
+  // le script en tête de Base.astro : sans JavaScript, seule la version rapide s'affiche.
+  const root = document.documentElement;
+  const mode = document.getElementById("mode")!;
+  const setQuick = (showQuick: boolean) => {
+    root.classList.toggle("show-quick", showQuick);
+    mode.setAttribute("aria-pressed", String(showQuick));
+    mode.textContent = (showQuick ? mode.dataset.on : mode.dataset.off)!;
+  };
+  setQuick(root.classList.contains("show-quick"));
+  mode.addEventListener("click", () => setQuick(!root.classList.contains("show-quick")));
+
+  // Changer de langue charge l'autre page : le choix est retenu (la page ne suivra plus la langue du
+  // navigateur), et la vue est gardée pour l'onglet. La progression dans l'arbre est gardée par engine.ts.
+  document.querySelectorAll<HTMLAnchorElement>("[data-lang]").forEach((a) =>
+    a.addEventListener("click", () => {
+      try {
+        localStorage.setItem("lang", a.dataset.lang!);
+        sessionStorage.setItem("quick", String(root.classList.contains("show-quick")));
+      } catch {}
+    }),
+  );
+</script>
+
+<style>
+  .wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-block: 96px 64px;
+    padding-inline: max(16px, env(safe-area-inset-left, 0px))
+      max(16px, env(safe-area-inset-right, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px 22px;
+    /* De l'air entre la présentation et l'arbre */
+    margin-bottom: 48px;
+  }
+  /* La photo en autocollant */
+  .me {
+    flex: none;
+    width: 108px;
+    height: 108px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid var(--frame);
+    background: var(--card);
+    transform: rotate(-5deg);
+  }
+  .who {
+    flex: 1 1 360px;
+    min-width: 0;
+  }
+  h1 {
+    margin: 0;
+    font-weight: 800;
+    font-size: clamp(36px, 6vw, 60px);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+  .who p {
+    margin: 12px 0 0;
+    font-size: 17px;
+  }
+  mark {
+    background: none;
+    color: inherit;
+    font-weight: 700;
+    text-decoration: underline 7px var(--accent);
+    text-underline-offset: -2px;
+    text-decoration-skip-ink: none;
+  }
+  /* Quelle vue montrer : décidé par les classes de <html> (js, show-quick), sans attendre les scripts */
+  :global(html:not(.js) #tree),
+  :global(html:not(.js) #mode),
+  :global(html.js:not(.show-quick) #quick),
+  :global(html.show-quick #tree) {
+    display: none;
+  }
+  .tools {
+    margin-left: auto;
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  /* FR | EN en autocollant : la langue affichée en aplat de couleur */
+  .lang {
+    display: flex;
+    border: var(--bw) solid var(--frame);
+    border-radius: 10px 12px 9px 11px;
+    overflow: hidden;
+    transform: rotate(-2deg);
+  }
+  .lang a {
+    font: 500 13px/1 var(--f-mono);
+    color: var(--muted);
+    text-decoration: none;
+    padding: 9px 10px 8px;
+    background: var(--card);
+  }
+  .lang a + a {
+    border-left: var(--bw) solid var(--frame);
+  }
+  .lang a:hover {
+    color: var(--fg);
+  }
+  .lang a[aria-current="page"] {
+    color: var(--ink);
+    background: var(--accent);
+  }
+  @media (max-width: 520px) {
+    .me {
+      width: 88px;
+      height: 88px;
+    }
+    .tools {
+      margin-left: 0;
+    }
+  }
+</style>

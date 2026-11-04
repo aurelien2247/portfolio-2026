@@ -12,7 +12,8 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^7.4.2"
+    "astro": "^7.4.2",
+    "v86": "0.5.469"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",

@@ -1,71 +1,116 @@
 ---
 // L'arbre d'agents interactif. Le balisage pose le décor ; src/scripts/agent-tree/ fait tout le reste.
+import { aboutDemo, getTopics } from "../data/content";
+import { ui as uis, type Lang } from "../i18n";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const ui = uis[lang];
+// Le contenu de l'arbre, dans la langue de la page, posé dans la page en JSON : le JavaScript
+// (le même pour / et /en/) ne transporte ainsi aucun texte, ni français ni anglais.
+// « < » est échappé pour qu'un texte ne puisse pas fermer la balise <script>.
+const data = JSON.stringify({ topics: getTopics(lang), about: aboutDemo(lang) }).replace(
+  /</g,
+  "\\u003c",
+);
 ---
 
-<section
-  class="agent-tree"
-  id="tree"
-  aria-label="Démo : mes agents répondent à tes questions"
-  hidden
->
+<section class="agent-tree" id="tree" aria-label={ui.treeLabel}>
   <p class="hint">
-    Pose une question à mes agents.
-    <span>Chacun découpe le travail, le confie à ses sous-agents et me renvoie le résultat.</span>
+    <span>{ui.hint}</span>
+    <svg viewBox="0 0 40 30" aria-hidden="true">
+      <path d="M3 4 C 16 4, 26 10, 28 24 M21 18 L28 25 L34 17"></path>
+    </svg>
   </p>
   <div class="chips" data-chips></div>
   <div class="play">
-    <div class="stage">
-      <svg viewBox="0 0 1000 580" aria-hidden="true">
-        <defs>
-          <pattern id="grid" width="22" height="22" patternUnits="userSpaceOnUse">
-            <circle class="dot" cx="11" cy="11" r="1.3"></circle>
-          </pattern>
-          <pattern id="mariniere" width="10" height="9" patternUnits="userSpaceOnUse">
-            <rect width="10" height="9" fill="#F6F6F2"></rect>
-            <rect y="5" width="10" height="4" style="fill: var(--navy)"></rect>
-          </pattern>
-        </defs>
-        <rect width="1000" height="580" fill="url(#grid)"></rect>
-        <g data-layer="edges"></g>
-        <g data-layer="packets"></g>
-        <g data-layer="nodes"></g>
-        <g data-layer="bubbles"></g>
-      </svg>
-      <canvas></canvas>
-      <div class="score">
-        agents consultés <b data-score>0</b>/5
+    <div class="col">
+      <div class="stage box">
+        <svg viewBox="0 0 1000 580" aria-hidden="true">
+          <defs>
+            <pattern id="mariniere" width="10" height="9" patternUnits="userSpaceOnUse">
+              <rect width="10" height="9" fill="#F6F6F2"></rect>
+              <rect y="5" width="10" height="4" style="fill: var(--navy)"></rect>
+            </pattern>
+          </defs>
+          <g data-layer="edges"></g>
+          <g data-layer="packets"></g>
+          <g data-layer="nodes"></g>
+          <g data-layer="bubbles"></g>
+        </svg>
+        <div class="score">
+          {ui.score} <b data-score>0</b>/5
+        </div>
       </div>
-    </div>
-    <div class="side">
-      <article class="answer" data-answer aria-live="polite">
-        <h2>Salut !</h2>
-        <p class="by">orchestrateur · en attente</p>
-        <p>
-          Pose une question : je la confie à l'agent qui connaît le sujet. Il la découpe en
-          sous-tâches, lance un sous-agent par tâche, rassemble les résultats et me les renvoie.
-        </p>
-        <p>Choisis une question au-dessus, ou clique sur un agent.</p>
-      </article>
-      <section class="trace" aria-label="Trace d'orchestration">
-        <h3>Trace</h3>
+      <!-- Un journal en lecture seule : rien ne doit laisser croire qu'on peut y écrire. -->
+      <section class="trace box" aria-label={ui.traceLabel}>
+        <span class="tab">{ui.traceTab}</span>
         <ol data-log>
-          <li>orchestrateur prêt · 5 agents en veille</li>
+          <li>{ui.traceReady}</li>
         </ol>
       </section>
-      <p class="note">
-        Démo animée : les réponses sont écrites par moi. Le vrai système multi-agents, lui, tourne à
-        la DGFiP.
-      </p>
+    </div>
+    <div class="side">
+      <article class="answer box" data-answer aria-live="polite">
+        <span class="tab">{ui.answerTab}</span>
+        <div class="answer-body"></div>
+      </article>
     </div>
   </div>
+
+  <!-- La fiche projet en grand, remplie par src/scripts/agent-tree/projects.ts -->
+  <dialog
+    class="project-modal box"
+    data-project
+    aria-labelledby="project-title"
+    style="--who: var(--c-projets)"
+  >
+    <span class="tab"></span>
+    <button class="btn close" type="button" data-close>
+      {ui.close}
+    </button>
+    <div class="inner">
+      <div class="screen" data-screen></div>
+      <div class="sheet">
+        <h2 id="project-title"></h2>
+        <p class="context"></p>
+        <div class="text"></div>
+        <div class="group" data-stack>
+          <p class="label">{ui.stackLabel}</p>
+          <div class="tags"></div>
+        </div>
+        <div class="group" data-skills>
+          <p class="label">{ui.skillsLabel}</p>
+          <div class="tags"></div>
+        </div>
+        <a class="repo" data-repo target="_blank" rel="noopener">
+          {ui.repo}
+        </a>
+        <nav aria-label={ui.otherProjects}>
+          <button class="btn" type="button" data-prev>
+            {ui.prev}
+          </button>
+          <button class="btn" type="button" data-next>
+            {ui.next}
+          </button>
+        </nav>
+      </div>
+    </div>
+  </dialog>
 </section>
 
+<script type="application/json" id="tree-data" set:html={data} />
 <script>
   import { initAgentTree } from "../scripts/agent-tree/engine";
-  import { topics } from "../data/agents";
+  import type { Topic } from "../data/agents";
 
   const tree = document.getElementById("tree")!;
-  initAgentTree(tree, topics);
+  const data: { topics: Topic[]; about: string } = JSON.parse(
+    document.getElementById("tree-data")!.textContent!,
+  );
+  initAgentTree(tree, data.topics, data.about);
 </script>
 
 <!-- Global : les éléments SVG sont créés par le script, les styles scopés d'Astro ne les atteindraient pas. -->
@@ -75,106 +120,211 @@
     flex-direction: column;
     gap: 14px;
   }
+
+  /* La consigne, manuscrite, avec une flèche vers les pastilles */
   .agent-tree .hint {
-    margin: 0;
-    font-family: var(--f-hand);
-    font-size: 21px;
-    color: var(--muted);
+    margin: 0 0 6px 6px;
+    font: 22px/1 var(--f-hand);
+    color: var(--accent);
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    transform: rotate(-1.5deg);
   }
+  /* Le texte un peu plus haut que la flèche, qui descend vers les pastilles */
   .agent-tree .hint span {
-    color: var(--fg);
+    transform: translateY(-8px);
+  }
+  .agent-tree .hint svg {
+    width: 34px;
+    height: 26px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    margin-bottom: -6px;
   }
 
+  /* Pastilles de sujets : chacune dans la couleur de son agent, pour qu'on voie que ce sont des boutons */
   .agent-tree .chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
   }
   .agent-tree .chip {
     font: 500 15px/1.2 var(--f-ui);
     color: var(--fg);
-    background: var(--card);
-    border: 1.5px solid var(--line);
-    border-radius: 999px;
-    padding: 10px 16px 10px 12px;
+    background: color-mix(in srgb, var(--who) 16%, var(--card));
+    border: var(--bw) solid var(--who);
+    border-radius: 12px 15px 11px 14px;
+    padding: 7px 14px 7px 8px;
     min-height: 44px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
+    transition:
+      transform 0.12s,
+      background-color 0.15s;
+  }
+  .agent-tree .chip svg {
+    flex: none;
+    width: 30px;
+    height: 26px;
+  }
+  .agent-tree .chip:nth-child(odd) {
+    transform: rotate(-0.6deg);
+  }
+  .agent-tree .chip:nth-child(even) {
+    transform: rotate(0.5deg);
   }
   .agent-tree .chip:hover:not(:disabled) {
-    border-color: var(--fg);
+    transform: translateY(-2px) rotate(-1deg);
+  }
+  .agent-tree .chip:active:not(:disabled) {
+    transform: translateY(1px);
   }
   .agent-tree .chip[aria-pressed="true"] {
-    background: var(--fg);
-    color: var(--bg);
-    border-color: var(--fg);
+    background: var(--who);
+    color: var(--who-ink, var(--ink));
   }
   .agent-tree .chip:disabled {
-    opacity: 0.6;
     cursor: progress;
   }
-  .agent-tree .swatch {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    border: 1.5px solid var(--outline);
+  .agent-tree .chip:disabled:not([aria-pressed="true"]) {
+    opacity: 0.55;
   }
 
+  /* Le « ? » en autocollant après les pastilles, et sa bulle */
+  .agent-tree .about {
+    position: relative;
+    align-self: center;
+  }
+  .agent-tree .about button {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: var(--bw) solid var(--frame);
+    background: var(--accent);
+    color: var(--ink);
+    font: 700 20px/1 var(--f-hand);
+    cursor: help;
+    transform: rotate(-8deg);
+    transition: transform 0.12s;
+  }
+  .agent-tree .about button:hover,
+  .agent-tree .about button[aria-expanded="true"] {
+    transform: rotate(4deg) scale(1.06);
+  }
+  /* Au-dessus du « ? », centrée ; --dx la décale pour qu'elle ne sorte pas de l'écran (calculé en JS).
+     Fermée, elle n'existe pas dans la mise en page (sinon elle déborderait de l'écran sur téléphone). */
+  .agent-tree .about-tip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    z-index: 5;
+    width: min(300px, calc(100vw - 32px));
+    font: 17px/1.3 var(--f-hand);
+    color: var(--fg);
+    background: var(--card);
+    border: var(--bw) solid var(--frame);
+    border-radius: 12px 15px 11px 14px;
+    padding: 10px 14px;
+    transform: translateX(calc(-50% + var(--dx, 0px))) rotate(-1deg);
+  }
+  .agent-tree .about button[aria-expanded="true"] + .about-tip {
+    display: block;
+  }
+
+  /* Mise en page : scène + trace à gauche, réponse à droite */
   .agent-tree .play {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
-    align-items: flex-start;
+    gap: 26px 22px;
+    container-type: inline-size;
+    /* Les deux colonnes ont la même hauteur : la réponse descend jusqu'au bas de la trace */
+    align-items: stretch;
+  }
+  /* Environ 60/40 sur ordinateur : la réponse a la place de respirer et l'arbre, moins haut, tient sur l'écran.
+     En dessous de ~960px, la réponse passe sous l'arbre. */
+  .agent-tree .col {
+    flex: 1.6 1 560px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .agent-tree .side {
+    flex: 1 1 380px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .agent-tree .side .answer {
+    flex: 1;
+  }
+  /* Côte à côte (560 + 380 + 22px d'écart) : la réponse prend exactement la hauteur de l'arbre + trace,
+     sans jamais la pousser. Si son contenu dépasse (une description ouverte), c'est l'intérieur qui défile. */
+  @container (min-width: 962px) {
+    .agent-tree .side {
+      position: relative;
+    }
+    .agent-tree .side .answer {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .agent-tree .answer-body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--edge) transparent;
+    }
   }
   .agent-tree .stage {
-    position: relative;
-    flex: 999 1 640px;
-    min-width: 0;
-    border: 1.5px solid var(--line);
-    border-radius: 16px;
     overflow: hidden;
+    padding-top: var(--stage-top, 0px);
     background: var(--stage);
   }
-  .agent-tree svg {
+  /* Sur téléphone, la scène est petite : on descend l'arbre sous le compteur, qui cachait l'orchestrateur */
+  @media (max-width: 760px) {
+    .agent-tree .stage {
+      --stage-top: 34px;
+    }
+  }
+  /* Ciblé sur la scène : les mini-têtes des pastilles sont aussi des <svg> et doivent garder leur taille. */
+  .agent-tree .stage > svg {
     display: block;
     width: 100%;
     height: auto;
     touch-action: manipulation;
-  }
-  .agent-tree canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
   }
   .agent-tree .score {
     position: absolute;
     top: 12px;
     left: 12px;
     font: 500 12px/1 var(--f-mono);
-    color: var(--muted);
-    background: var(--card);
-    border: 1.5px solid var(--line);
-    border-radius: 999px;
-    padding: 7px 12px;
+    color: var(--ink);
+    background: var(--accent);
+    border: 2px solid var(--frame);
+    border-radius: 7px 9px 6px 8px;
+    padding: 6px 10px;
+    transform: rotate(-2deg);
     font-variant-numeric: tabular-nums;
   }
   .agent-tree .score b {
-    color: var(--fg);
-    font-weight: 500;
+    font-weight: 700;
   }
 
   /* Dessin SVG */
-  .agent-tree .dot {
-    fill: var(--dots);
-  }
   .agent-tree .edge {
     fill: none;
     stroke: var(--edge);
-    stroke-width: 2;
+    stroke-width: 2.5;
     stroke-linejoin: round;
   }
   .agent-tree .edge.on {
@@ -223,14 +373,22 @@
     stroke-width: 2.2;
     stroke-linecap: round;
   }
-  .agent-tree .mouth.light {
-    stroke: #fff;
-  }
   .agent-tree .headset {
     fill: none;
-    stroke: var(--fg);
-    stroke-width: 3;
+    stroke: var(--outline);
+    stroke-width: 3.2;
     stroke-linecap: round;
+  }
+  .agent-tree .earcup {
+    fill: var(--fg);
+  }
+  .agent-tree .hair-ol {
+    fill: var(--hair);
+    stroke: var(--outline);
+    stroke-width: 2.2;
+  }
+  .agent-tree .hair {
+    fill: var(--hair);
   }
   .agent-tree .pending {
     fill: var(--accent);
@@ -244,6 +402,10 @@
     stroke-width: 2.2;
     stroke-linecap: round;
     stroke-linejoin: round;
+  }
+  /* Les agents sont cliquables */
+  .agent-tree .agent.clickable {
+    cursor: pointer;
   }
   .agent-tree .label {
     font: 500 14px var(--f-mono);
@@ -265,7 +427,7 @@
   .agent-tree .bubble path {
     fill: var(--card);
     stroke: var(--outline);
-    stroke-width: 1.5;
+    stroke-width: 2;
   }
   .agent-tree .bubble text {
     font: 19px var(--f-hand);
@@ -273,34 +435,26 @@
   }
   .agent-tree .packet rect {
     stroke: var(--outline);
-    stroke-width: 1.6;
+    stroke-width: 1.8;
   }
 
-  /* Réponse et trace */
-  .agent-tree .side {
-    flex: 1 1 320px;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  .agent-tree .answer {
-    background: var(--card);
-    border: 1.5px solid var(--line);
-    border-radius: 16px;
-    padding: 22px 24px 26px;
-    min-width: 0;
+  /* Réponse : prend la couleur de l'agent qui répond (--who) */
+  .agent-tree .answer-body {
+    padding: 26px 22px 16px;
   }
   .agent-tree .answer h2 {
-    margin: 0 0 4px;
+    margin: 0 0 6px;
     font-weight: 800;
-    font-size: 26px;
+    font-size: 27px;
     line-height: 1.1;
     letter-spacing: -0.02em;
     text-wrap: balance;
+    text-decoration: underline 8px var(--who, var(--accent));
+    text-underline-offset: -1px;
+    text-decoration-skip-ink: none;
   }
   .agent-tree .answer .by {
-    margin: 0 0 16px;
+    margin: 0 0 10px;
     font: 12px/1.5 var(--f-mono);
     color: var(--muted);
   }
@@ -310,21 +464,47 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
   }
-  .agent-tree .answer li {
+  .agent-tree .answer ul > li {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    padding-left: 14px;
+    border-left: 3px solid var(--who, var(--frame));
     animation: answer-rise 0.35s ease-out both;
   }
-  .agent-tree .answer li span {
+  .agent-tree .answer ul > li strong {
+    font-weight: 700;
+  }
+  .agent-tree .answer ul > li > span {
     color: var(--muted);
     font-size: 15px;
   }
-  .agent-tree .answer li span strong {
+  .agent-tree .answer ul > li > span strong {
     color: var(--fg);
     font-weight: 500;
+  }
+  /* Réponse « Ma stack » : les logos des technos, comme dans les fiches projet */
+  .agent-tree .answer .techs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    margin-top: 6px;
+  }
+  .agent-tree .answer .tech img {
+    display: block;
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+  }
+  .agent-tree .answer .chip-tag {
+    font: 500 12px/1 var(--f-mono);
+    background: color-mix(in srgb, var(--who) 22%, var(--card));
+    border: 2px solid var(--frame);
+    border-radius: 6px 8px 5px 7px;
+    padding: 6px 9px 5px;
   }
   .agent-tree .answer p {
     margin: 0 0 12px;
@@ -332,6 +512,519 @@
   }
   .agent-tree .answer a {
     color: var(--fg);
+    text-decoration-thickness: 2px;
+  }
+  /* Réponse en « git log » : du plus récent (HEAD) au premier commit */
+  .agent-tree .answer .log {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .agent-tree .answer .commit {
+    position: relative;
+    padding: 0 0 4px 40px;
+    animation: answer-rise 0.35s ease-out both;
+  }
+  .agent-tree .answer .commit:last-child {
+    padding-bottom: 0;
+  }
+  /* La branche : un trait continu qui relie les nœuds */
+  .agent-tree .answer .commit::before {
+    content: "";
+    position: absolute;
+    left: 13px;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--who);
+  }
+  .agent-tree .answer .commit:first-child::before {
+    top: 29px;
+  }
+  .agent-tree .answer .commit:last-child::before {
+    bottom: auto;
+    height: 29px;
+  }
+  .agent-tree .answer .commit:only-child::before {
+    display: none;
+  }
+  .agent-tree .answer .node {
+    position: absolute;
+    left: 4px;
+    top: 18px;
+    width: 22px;
+    height: 22px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    background: var(--card);
+    border: var(--bw) solid var(--frame);
+  }
+  .agent-tree .answer .commit:first-child .node {
+    background: var(--who);
+  }
+  /* Chaque formation est un accordéon : fermé par défaut, un seul ouvert à la fois */
+  .agent-tree .answer summary {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 10px 13px 9px 12px;
+    cursor: pointer;
+    list-style: none;
+    transition: background-color 0.15s;
+  }
+  .agent-tree .answer summary::-webkit-details-marker {
+    display: none;
+  }
+  .agent-tree .answer summary:hover,
+  .agent-tree .answer details[open] summary {
+    background: color-mix(in srgb, var(--who) 16%, var(--card));
+  }
+  .agent-tree .answer .toggle {
+    flex: none;
+    align-self: center;
+    margin-left: auto;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    font: 700 16px/1 var(--f-mono);
+    border: 2px solid var(--frame);
+    border-radius: 7px 9px 6px 8px;
+    background: var(--card);
+  }
+  .agent-tree .answer .toggle::before {
+    content: "+";
+  }
+  .agent-tree .answer details[open] .toggle::before {
+    content: "−";
+  }
+  .agent-tree .answer details > :not(summary) {
+    margin-left: 8px;
+    margin-right: 8px;
+  }
+  .agent-tree .answer .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+    font: 500 12px/1 var(--f-mono);
+  }
+  .agent-tree .answer .when {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .agent-tree .answer .badge {
+    border: 2px solid var(--frame);
+    border-radius: 5px 6px 4px 6px;
+    padding: 3px 6px 2px;
+    background: var(--accent);
+    color: var(--ink);
+  }
+  .agent-tree .answer .who {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .agent-tree .answer .who strong {
+    display: block;
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.15;
+  }
+  .agent-tree .answer .place {
+    display: block;
+    font-size: 14px;
+    line-height: 1.3;
+    color: var(--muted);
+  }
+  /* Le logo en petit autocollant */
+  .agent-tree .answer .logo {
+    flex: none;
+    width: 46px;
+    height: 38px;
+    box-sizing: border-box;
+    padding: 4px;
+    object-fit: contain;
+    background: var(--sticker);
+    border: 2px solid var(--frame);
+    border-radius: 8px 10px 7px 9px;
+    margin-top: 4px;
+  }
+  .agent-tree .answer .text {
+    margin-top: 6px;
+    margin-bottom: 8px;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  .agent-tree .answer .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-bottom: 4px;
+  }
+  .agent-tree .answer .tags span {
+    font: 500 12px/1 var(--f-mono);
+    color: var(--fg);
+    background: color-mix(in srgb, var(--who) 22%, var(--card));
+    border: 2px solid var(--frame);
+    border-radius: 6px 8px 5px 7px;
+    padding: 5px 8px 4px;
+  }
+  /* Sommaire des projets : une ligne-bouton par projet, qui ouvre la fiche en grand */
+  .agent-tree .answer .projects {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .agent-tree .answer .project {
+    animation: answer-rise 0.35s ease-out both;
+  }
+  .agent-tree .answer .project button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    text-align: left;
+    font: inherit;
+    color: var(--fg);
+    background: color-mix(in srgb, var(--who) 10%, var(--card));
+    border: var(--bw) solid var(--frame);
+    border-radius: 10px 13px 9px 12px;
+    cursor: pointer;
+    transition:
+      transform 0.12s,
+      background-color 0.15s;
+  }
+  .agent-tree .answer .project button:hover {
+    background: color-mix(in srgb, var(--who) 22%, var(--card));
+    transform: translate(-1px, -2px) rotate(-0.4deg);
+  }
+  /* Le logo de l'entreprise, en pastille ronde qu'il remplit entièrement (versions recadrées dans src/assets/logo-*) */
+  .agent-tree .answer .project .logo {
+    width: 50px;
+    height: 50px;
+    margin-top: 0;
+    padding: 0;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+  .agent-tree .answer .project .go {
+    flex: none;
+    margin-left: auto;
+    font: 700 12px/1 var(--f-mono);
+    color: var(--ink);
+    background: var(--who);
+    border: 2px solid var(--frame);
+    border-radius: 6px 8px 5px 7px;
+    padding: 6px 8px 5px;
+  }
+
+  /* La fiche projet : une grande boîte dessinée par-dessus la page */
+  /* position: fixed, sinon .box (relative) l'emporte sur le style natif du <dialog> */
+  .agent-tree .project-modal {
+    position: fixed;
+    width: min(1240px, calc(100vw - 32px));
+    max-width: none;
+    max-height: calc(100dvh - 48px);
+    padding: 0;
+    color: var(--fg);
+    background: var(--card);
+    overflow: visible;
+  }
+  .agent-tree .project-modal::backdrop {
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+  }
+  /* Au-dessus de l'écran, qui couvre toute la partie gauche */
+  .agent-tree .project-modal .tab,
+  .agent-tree .project-modal .close {
+    z-index: 2;
+  }
+  .agent-tree .project-modal .close {
+    position: absolute;
+    top: -16px;
+    right: 16px;
+    min-height: 0;
+    padding: 8px 12px;
+    background: var(--accent);
+    color: var(--ink);
+    transform: rotate(2deg);
+  }
+  .agent-tree .project-modal .inner {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+  }
+  /* L'écran : émulation, captures ou case vide */
+  .agent-tree .project-modal .screen {
+    position: relative;
+    min-height: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 36px 24px 24px;
+    background: var(--stage);
+    border-right: var(--bw) solid var(--frame);
+    border-radius: 14px 0 0 17px;
+  }
+  /* Les captures, comme sur un canevas Figma : elles remplissent toute la partie gauche,
+     sans cadre ni marge. Les points flottent par-dessus, en bas. */
+  .agent-tree .project-modal .screen[data-kind="shots"] {
+    padding: 0;
+    overflow: hidden;
+  }
+  .agent-tree .project-modal .screen[data-kind="shots"] .slot > a {
+    position: absolute;
+    inset: 0;
+  }
+  .agent-tree .project-modal .screen.on-black {
+    background: var(--bg);
+  }
+  /* Un logo ne doit pas être agrandi au-delà de sa taille réelle, sinon il devient flou */
+  .agent-tree .project-modal .screen.on-black .shot {
+    object-fit: scale-down;
+  }
+  .agent-tree .project-modal .slot {
+    display: contents;
+  }
+  .agent-tree .project-modal .shot {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  /* Contrôles de la visionneuse : volontairement neutres (verre fumé, sans contour dessiné),
+     comme les outils d'un logiciel posés sur l'image */
+  .agent-tree .project-modal .pager,
+  .agent-tree .project-modal .shot-arrow {
+    background: color-mix(in srgb, var(--bg) 55%, transparent);
+    backdrop-filter: blur(8px);
+    color: var(--fg);
+    border: 0;
+  }
+  .agent-tree .project-modal .pager {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    translate: -50% 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+  }
+  .agent-tree .project-modal .pager .dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--fg) 40%, transparent);
+    cursor: pointer;
+    transition:
+      width 0.2s,
+      background-color 0.2s;
+  }
+  .agent-tree .project-modal .pager .dot[aria-current="true"] {
+    width: 20px;
+    border-radius: 4px;
+    background: var(--fg);
+  }
+  .agent-tree .project-modal .pager .count {
+    margin-left: 4px;
+    font: 500 12px/1 var(--f-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  .agent-tree .project-modal .shot-arrow {
+    position: absolute;
+    top: 50%;
+    translate: 0 -50%;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    opacity: 0.75;
+    transition: opacity 0.15s;
+  }
+  .agent-tree .project-modal .shot-arrow:hover {
+    opacity: 1;
+  }
+  .agent-tree .project-modal .shot-arrow.left {
+    left: 14px;
+  }
+  .agent-tree .project-modal .shot-arrow.right {
+    right: 14px;
+  }
+  .agent-tree .project-modal .shot-arrow svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .agent-tree .project-modal .empty {
+    margin: 0;
+    width: min(100%, 420px);
+    aspect-ratio: 16 / 10;
+    display: grid;
+    place-items: center;
+    font: 20px var(--f-hand);
+    color: var(--muted);
+    border: var(--bw) dashed var(--frame);
+    border-radius: 12px 15px 11px 14px;
+  }
+  /* La fiche : contexte, texte, stack, navigation */
+  .agent-tree .project-modal .sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 36px 24px 20px;
+  }
+  .agent-tree .project-modal .sheet h2 {
+    margin: 0;
+    font-weight: 800;
+    font-size: 27px;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    text-decoration: underline 8px var(--who);
+    text-underline-offset: -1px;
+    text-decoration-skip-ink: none;
+  }
+  .agent-tree .project-modal .context {
+    margin: 0;
+    font: 500 13px/1.5 var(--f-mono);
+    color: var(--muted);
+  }
+  .agent-tree .project-modal .text {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.45;
+  }
+  .agent-tree .project-modal .text .step {
+    display: block;
+  }
+  .agent-tree .project-modal .text .step + .step {
+    margin-top: 10px;
+  }
+  .agent-tree .project-modal .shot {
+    cursor: zoom-in;
+  }
+  .agent-tree .project-modal .group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .agent-tree .project-modal .label {
+    margin: 6px 0 0;
+    font: 500 12px var(--f-mono);
+    color: var(--muted);
+  }
+  .agent-tree .project-modal .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .agent-tree .project-modal [data-skills] .chip-tag {
+    background: var(--card);
+  }
+  /* Une techno avec logo : l'icône seule */
+  .agent-tree .project-modal .tech {
+    display: block;
+  }
+  .agent-tree .project-modal .tech img {
+    display: block;
+    width: 44px;
+    height: 44px;
+    /* Même arrondi que les icônes skillicons, pour les logos carrés ajoutés à la main */
+    border-radius: 10px;
+  }
+  .agent-tree .project-modal [data-stack] .tags {
+    align-items: center;
+    gap: 8px;
+  }
+  .agent-tree .project-modal .chip-tag {
+    font: 500 13px/1 var(--f-mono);
+    background: color-mix(in srgb, var(--who) 22%, var(--card));
+    border: 2px solid var(--frame);
+    border-radius: 6px 8px 5px 7px;
+    padding: 6px 9px 5px;
+  }
+  .agent-tree .project-modal .repo {
+    align-self: flex-start;
+    font: 500 13px var(--f-mono);
+    color: var(--fg);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+  .agent-tree .project-modal nav {
+    margin-top: auto;
+    padding-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .agent-tree .project-modal nav .btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+    transform: none;
+  }
+  /* Sur téléphone : plein écran, l'écran au-dessus de la fiche */
+  @media (max-width: 760px) {
+    .agent-tree .project-modal {
+      width: 100vw;
+      height: 100dvh;
+      max-height: none;
+      border-radius: 0;
+      border: 0;
+    }
+    /* Sur téléphone, plus de grille : l'écran puis la fiche, et toute la popup défile.
+       Toute la hauteur : une bande vide en bas serait prise pour le fond et fermerait la popup. */
+    .agent-tree .project-modal .inner {
+      display: block;
+      overflow-y: auto;
+      height: 100%;
+      max-height: none;
+    }
+    /* Sur téléphone, la capture garde sa hauteur naturelle, toujours sans cadre */
+    .agent-tree .project-modal .screen[data-kind="shots"] {
+      padding: 64px 0 60px;
+    }
+    .agent-tree .project-modal .screen[data-kind="shots"] .slot > a {
+      position: static;
+    }
+    .agent-tree .project-modal .shot {
+      height: auto;
+    }
+    .agent-tree .project-modal .screen {
+      min-height: 0;
+      padding-top: 56px;
+      border-right: 0;
+      border-bottom: var(--bw) solid var(--frame);
+      border-radius: 0;
+    }
+    .agent-tree .project-modal .close,
+    .agent-tree .project-modal .tab {
+      top: 14px;
+    }
+  }
+
+  /* Une démo laisse de la place en bas pour les points de la visionneuse */
+  .agent-tree .project-modal .screen[data-kind="demo"]:has(.pager) {
+    padding-bottom: 64px;
   }
   @keyframes answer-rise {
     from {
@@ -361,38 +1054,29 @@
       opacity: 0.35;
     }
   }
+
+  /* Trace : petite console sombre sous la scène */
   .agent-tree .trace {
-    border: 1.5px solid var(--line);
-    border-radius: 16px;
-    padding: 14px 16px;
-    min-width: 0;
+    background: var(--card);
+    padding: 26px 16px 8px;
   }
-  .agent-tree .trace h3 {
-    margin: 0 0 8px;
-    font: 500 11px/1 var(--f-mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
+  .agent-tree .trace .tab {
+    --who: var(--console-ok);
   }
   .agent-tree .trace ol {
     list-style: none;
     margin: 0;
     padding: 0;
-    font: 12px/1.65 var(--f-mono);
-    color: var(--muted);
-    max-height: 220px;
+    font: 12px/1.7 var(--f-mono);
+    color: var(--console-dim);
+    max-height: 62px;
     overflow: auto;
   }
   .agent-tree .trace b {
-    color: var(--fg);
+    color: var(--console-fg);
     font-weight: 500;
   }
   .agent-tree .trace li.done {
-    color: var(--fg);
-  }
-  .agent-tree .note {
-    margin: 0;
-    font-size: 13px;
-    color: var(--muted);
+    color: var(--console-ok);
   }
 </style>

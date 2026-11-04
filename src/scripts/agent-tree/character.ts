@@ -25,6 +25,38 @@ const MOUTHS: Record<Mood, string> = {
   done: "M-7 5 Q0 13 7 5",
 };
 
+/** Boucles de cheveux de l'orchestrateur : [x, y, rayon]. */
+const CURLS = [
+  [-19, -27, 7],
+  [-10, -33, 8],
+  [1, -35, 8],
+  [12, -33, 8],
+  [20, -26, 7],
+  [-4, -27, 6],
+  [8, -27, 6],
+];
+
+/** Mini-tête d'agent (pour les pastilles de sujets), en SVG autonome. */
+export function createFace(color: string) {
+  const f = svgEl("svg", {
+    width: 30,
+    height: 26,
+    viewBox: "-16 -15 32 30",
+    "aria-hidden": "true",
+  });
+  svgEl(
+    "rect",
+    { x: -14, y: -13, width: 28, height: 25, rx: 10, class: "ol", style: `fill: ${color}` },
+    f,
+  );
+  for (const ex of [-5, 5]) {
+    svgEl("circle", { cx: ex, cy: -3, r: 3.6, class: "eye" }, f);
+    svgEl("circle", { cx: ex + 0.8, cy: -3, r: 1.6, class: "pupil" }, f);
+  }
+  svgEl("path", { d: "M-3.5 5 Q0 7 3.5 5", class: "mouth" }, f);
+  return f;
+}
+
 export interface AgentOptions {
   id: string;
   label: string;
@@ -79,8 +111,15 @@ export function createAgent(layer: SVGGElement, o: AgentOptions): Agent {
   );
 
   if (o.orch) {
-    svgEl("path", { class: "headset", d: "M-25 -12 Q-25 -42 0 -42 Q25 -42 25 -12" }, body);
-    svgEl("path", { class: "headset", d: "M26 -6 Q27 8 12 10" }, body);
+    // Les boucles brunes d'Aurélien : contours d'abord, puis le remplissage par-dessus
+    // pour effacer les traits entre les boucles.
+    for (const [cx, cy, r] of CURLS) svgEl("circle", { cx, cy, r, class: "hair-ol" }, body);
+    for (const [cx, cy, r] of CURLS) svgEl("circle", { cx, cy, r: r - 1.1, class: "hair" }, body);
+    svgEl("path", { class: "headset", d: "M-29 -10 Q-30 -48 0 -48 Q30 -48 29 -10" }, body);
+    for (const x of [-33, 25]) {
+      svgEl("rect", { x, y: -16, width: 8, height: 14, rx: 3, class: "ol earcup" }, body);
+    }
+    svgEl("path", { class: "headset", d: "M29 -4 Q30 9 13 10" }, body);
   }
   if (o.accessory === "ball") {
     svgEl("circle", { cx: 34, cy: 24, r: 7, class: "ol thin", fill: "#F6F6F2" }, body);
@@ -93,11 +132,7 @@ export function createAgent(layer: SVGGElement, o: AgentOptions): Agent {
     svgEl("circle", { cx: ex, cy: -8, r: 7.5, class: "eye" }, eyes);
     return { ex, el: svgEl("circle", { cx: ex, cy: -8, r: 3.4, class: "pupil" }, eyes) };
   });
-  const mouth = svgEl(
-    "path",
-    { d: o.orch ? MOUTHS.done : MOUTHS.idle, class: o.orch ? "mouth light" : "mouth" },
-    body,
-  );
+  const mouth = svgEl("path", { d: o.orch ? MOUTHS.done : MOUTHS.idle, class: "mouth" }, body);
 
   let dot: SVGCircleElement | undefined;
   let check: SVGGElement | undefined;

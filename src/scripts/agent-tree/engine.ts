@@ -1,19 +1,28 @@
 // Le moteur de l'arbre : orchestrateur → agents → sous-agents éphémères.
 // Ce n'est pas une vraie IA : les réponses viennent de src/data/agents.ts, seule la mise en scène est animée.
+// Les textes de l'interface viennent de src/i18n.ts, dans la langue de la page.
 
-import type { Topic, SubAgent } from "../../data/agents";
-import { createAgent, markConsulted, setMood, svgEl, type Agent } from "./character";
-import { createConfetti } from "./fx";
+import { inkOn, solidColor, type Topic, type SubAgent } from "../../data/agents";
+import { strings } from "../../i18n";
+import { createAgent, createFace, markConsulted, setMood, svgEl, type Agent } from "./character";
 import { ease, reduceMotion, tween, wait } from "./motion";
+import { createProjectModal, techTag } from "./projects";
 
 const VIEW_W = 1000;
+const PROGRESS = "agent-tree-progress";
 const VIEW_H = 580;
 
 const $ = <T extends Element>(sel: string, root: ParentNode = document) =>
   root.querySelector<T>(sel)!;
 
-export function initAgentTree(root: HTMLElement, topics: Topic[]) {
-  const svg = $<SVGSVGElement>("svg", root);
+// Le nom affiché d'un agent ou d'un sous-agent (traduit en anglais, sinon sa clé)
+const nameOf = (x: Topic | SubAgent) => x.name ?? ("key" in x ? x.key : x.id);
+
+/** `aboutText` : le texte de la bulle du « ? » (src/data/agents.ts, dans la langue de la page). */
+export function initAgentTree(root: HTMLElement, topics: Topic[], aboutText: string) {
+  const ui = strings();
+  // La scène (le premier <svg> de l'arbre est la petite flèche de « Choisis un sujet »)
+  const svg = $<SVGSVGElement>(".stage > svg", root);
   const layers = {
     edges: $<SVGGElement>("[data-layer=edges]", root),
     packets: $<SVGGElement>("[data-layer=packets]", root),
@@ -24,7 +33,7 @@ export function initAgentTree(root: HTMLElement, topics: Topic[]) {
   const answer = $<HTMLElement>("[data-answer]", root);
   const logEl = $<HTMLOListElement>("[data-log]", root);
   const scoreEl = $<HTMLElement>("[data-score]", root);
-  const confetti = createConfetti($<HTMLCanvasElement>("canvas", root), VIEW_W, VIEW_H);
+  const openProject = createProjectModal($<HTMLDialogElement>("[data-project]", root));
 
   const nodes = new Set<Agent>();
   const add = (a: Agent) => (nodes.add(a), a);
@@ -44,11 +53,11 @@ export function initAgentTree(root: HTMLElement, topics: Topic[]) {
       id: "orch",
       orch: true,
       x: VIEW_W / 2,
-      y: 92,
+      y: 100,
       scale: 1.1,
       color: "var(--orch)",
-      label: "Aurélien · orchestrateur",
-      status: "prêt",
+      label: ui.orchestrator,
+      status: ui.ready,
     }),
   );
 
@@ -64,11 +73,12 @@ export function initAgentTree(root: HTMLElement, topics: Topic[]) {
         scale: 0.95,
         color: t.color,
         accessory: t.accessory,
-        label: t.key,
-        status: "en veille",
+        label: nameOf(t),
+        status: ui.idle,
       }),
     );
     a.edge = svgEl("path", { class: "edge", d: elbow(orch, a) }, layers.edges);
+    a.g.classList.add("clickable");
     a.g.addEventListener("click", () => ask(t));
     agents.set(t.key, a);
   });
@@ -97,12 +107,14 @@ export function initAgentTree(root: HTMLElement, topics: Topic[]) {
     }
     b.g.style.display = "";
     b.text.textContent = text;
-    const w = Math.max(44, b.text.getComputedTextLength() + 26);
+    // Arbre caché (version rapide) : le texte ne se mesure pas, on estime sa largeur
+    const len = b.text.getComputedTextLength() || text.length * 8;
+    const w = Math.max(44, len + 26);
     let x: number;
     let top: number;
     if (a.orch) {
       // À droite de l'orchestrateur : au-dessus, il n'y a pas la place.
-      x = a.x + 52 * a.scale;
+      x = a.x + 56 * a.scale;
       top = a.y - 34;
       b.tail.setAttribute("d", `M${x + 1} ${top + 9} L${x - 9} ${top + 16} L${x + 1} ${top + 23}`);
     } else {
@@ -123,7 +135,6 @@ export function initAgentTree(root: HTMLElement, topics: Topic[]) {
   /* ---------- Messages le long des liens ---------- */
 
   let lookAt: DOMPoint | null = null;
-  const resultColor = (c: string) => c.replace("url(#mariniere)", "var(--navy)");
 
   async function send(edge: SVGPathElement, back: boolean, ms: number, fill: string) {
     edge.classList.add("on");
@@ -159,7 +170,7 @@ export function initAgentTree(root: HTMLElement, topics: Topic[]) {
           y: parent.y,
           scale: 0.6,
           color: parent.color,
-          label: d.id,
+          label: nameOf(d),
           appear: 0,
         }),
       );
@@ -258,13 +269,13 @@ export function initAgentTree(root: HTMLElement, topics: Topic[]) {
     if (!btn) return;
     try {
       await navigator.clipboard.writeText(btn.dataset.copy!);
-      btn.textContent = "Copié";
+      btn.textContent = ui.copied;
     } catch {
       const range = document.createRange();
       range.selectNodeContents(btn.previousElementSibling!);
       getSelection()?.removeAllRanges();
       getSelection()?.addRange(range);
-      btn.textContent = "Sélectionné, fais Ctrl+C";
+      btn.textContent = ui.copyFallback;
     }
   });
 
@@ -273,30 +284,164 @@ export function initAgentTree(root: HTMLElement, topics: Topic[]) {
     b.className = "chip";
     b.type = "button";
     b.setAttribute("aria-pressed", "false");
-    const swatch = document.createElement("i");
-    swatch.className = "swatch";
-    // Le motif marinière du SVG n'existe pas en CSS : on le refait en rayures.
-    swatch.style.background = t.color.startsWith("url(")
-      ? "repeating-linear-gradient(#f6f6f2 0 3px, var(--navy) 3px 6px)"
-      : t.color;
-    b.append(swatch, t.question);
+    b.style.setProperty("--who", solidColor(t.color));
+    b.style.setProperty("--who-ink", inkOn(t.color));
+    b.append(createFace(t.color), t.question);
     b.addEventListener("click", () => ask(t));
     chips.appendChild(b);
     return { key: t.key, el: b };
   });
+
+  // Le « ? » après les pastilles : sa bulle s'ouvre au survol, au focus clavier, ou au toucher (téléphone)
+  const about = document.createElement("span");
+  about.className = "about";
+  about.innerHTML = `<button type="button" aria-expanded="false" aria-controls="about-demo" aria-label="${ui.aboutLabel}">?</button><span class="about-tip" id="about-demo" role="note"></span>`;
+  $(".about-tip", about).textContent = aboutText;
+  const aboutBtn = $<HTMLButtonElement>("button", about);
+  const aboutTip = $<HTMLElement>(".about-tip", about);
+  // La bulle est centrée sur le « ? » ; on la décale si elle sort de l'écran (le « ? » est au bord)
+  const placeAbout = () => {
+    aboutTip.style.setProperty("--dx", "0px");
+    const r = aboutTip.getBoundingClientRect();
+    const margin = 16;
+    const dx =
+      r.left < margin
+        ? margin - r.left
+        : r.right > innerWidth - margin
+          ? innerWidth - margin - r.right
+          : 0;
+    aboutTip.style.setProperty("--dx", `${dx}px`);
+  };
+  // Ouverte au survol de la souris ou au focus clavier ; un clic (ou un toucher) l'épingle ouverte.
+  // Échap, un clic ailleurs ou un second clic la ferment.
+  let pinned = false;
+  const showAbout = (on: boolean) => {
+    aboutBtn.setAttribute("aria-expanded", String(on));
+    if (on) placeAbout(); // une fois affichée : fermée, elle n'a pas de taille
+  };
+  const unpin = () => {
+    pinned = false;
+    showAbout(false);
+  };
+  about.addEventListener("pointerenter", (e) => e.pointerType === "mouse" && showAbout(true));
+  about.addEventListener(
+    "pointerleave",
+    (e) => e.pointerType === "mouse" && !pinned && showAbout(false),
+  );
+  aboutBtn.addEventListener("focus", () => aboutBtn.matches(":focus-visible") && showAbout(true));
+  aboutBtn.addEventListener("blur", () => !pinned && showAbout(false));
+  aboutBtn.addEventListener("click", () => {
+    pinned = !pinned;
+    showAbout(pinned);
+  });
+  document.addEventListener("click", (e) => !about.contains(e.target as Node) && unpin());
+  about.addEventListener("keydown", (e) => e.key === "Escape" && unpin());
+  chips.appendChild(about);
+
   const setChips = (disabled: boolean, active?: string) =>
     chipButtons.forEach(({ key, el }) => {
       el.disabled = disabled;
       if (active) el.setAttribute("aria-pressed", String(key === active));
     });
 
+  /* ---------- Les résultats dans la réponse ---------- */
+
+  // Le html vient de agents.ts (écrit à la main) ; les autres champs passent par textContent.
+  function listItem(def: SubAgent) {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong></strong><span>${def.html}</span>`;
+    $("strong", li).textContent = def.title;
+    if (def.stack) {
+      const techs = document.createElement("div");
+      techs.className = "techs";
+      techs.append(...def.stack.map((t) => techTag(t)));
+      $("span", li).replaceWith(techs);
+    }
+    return li;
+  }
+
+  // Un « commit » du git log : nœud sur la ligne, puis un accordéon.
+  // Le même `name` sur chaque <details> fait que le navigateur n'en garde qu'un d'ouvert.
+  function commitItem(def: SubAgent, group: string) {
+    const li = document.createElement("li");
+    li.className = "commit";
+    li.innerHTML = `<span class="node" aria-hidden="true"></span>
+      <details name="${group}">
+        <summary>
+          <span class="who"><span class="meta"><span class="when"></span></span><strong></strong><span class="place"></span></span>
+          <span class="toggle" aria-hidden="true"></span>
+        </summary>
+        <p class="text">${def.html}</p>
+        <div class="tags"></div>
+      </details>`;
+    if (def.open) $<HTMLDetailsElement>("details", li).open = true;
+    $(".when", li).textContent = def.when ?? "";
+    if (def.badge) {
+      const s = document.createElement("span");
+      s.className = "badge";
+      s.textContent = def.badge;
+      $(".meta", li).append(s);
+    }
+    $("strong", li).textContent = def.title;
+    $(".place", li).textContent = def.place ?? "";
+    if (def.logo) {
+      const img = document.createElement("img");
+      img.className = "logo";
+      img.src = def.logo.src;
+      img.alt = "";
+      $("summary", li).prepend(img);
+    }
+    for (const tag of def.tags ?? []) {
+      const s = document.createElement("span");
+      s.textContent = tag;
+      $(".tags", li).append(s);
+    }
+    // Si la description qu'on vient d'ouvrir dépasse du bas de la réponse, on la fait défiler pour la
+    // montrer en entier. Seulement après un clic : une ligne ouverte d'office ne fait pas bouger la page.
+    const details = $<HTMLDetailsElement>("details", li);
+    let clicked = false;
+    $("summary", li).addEventListener("click", () => (clicked = true));
+    details.addEventListener("toggle", () => {
+      if (details.open && clicked)
+        details.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
+      clicked = false;
+    });
+    return li;
+  }
+
+  // Une ligne du sommaire des projets : un clic ouvre la fiche en grand.
+  function projectItem(t: Topic, def: SubAgent, i: number) {
+    const li = document.createElement("li");
+    li.className = "project";
+    li.innerHTML = `<button type="button"><span class="who"><strong></strong><span class="place"></span></span><span class="go"></span></button>`;
+    $("strong", li).textContent = def.title;
+    $(".place", li).textContent = [def.place, def.badge].filter(Boolean).join(" · ");
+    $(".go", li).textContent = def.demo ? ui.play : ui.see;
+    if (def.logo) {
+      const img = document.createElement("img");
+      img.className = "logo";
+      img.src = def.logo.src;
+      img.alt = "";
+      $("button", li).prepend(img);
+    }
+    $("button", li).addEventListener("click", () => openProject(t.subs, i));
+    return li;
+  }
+
+  const resultItem = (t: Topic, def: SubAgent, i: number) =>
+    t.layout === "log"
+      ? commitItem(def, `log-${t.key}`)
+      : t.layout === "projects"
+        ? projectItem(t, def, i)
+        : listItem(def);
+
   /* ---------- Le déroulé d'une question ---------- */
 
   let busy = false;
-  let finaleDone = false;
+  let lastAnswer: string | undefined;
   const consulted = new Set<string>();
   setTimeout(() => {
-    if (!busy && !consulted.size) say(orch, "Clique sur un de mes agents !");
+    if (!busy && !consulted.size) say(orch, ui.clickMe);
   }, 900);
 
   async function ask(t: Topic) {
@@ -305,89 +450,125 @@ export function initAgentTree(root: HTMLElement, topics: Topic[]) {
     const a = agents.get(t.key)!;
     setChips(true, t.key);
 
-    answer.innerHTML = `<h2></h2><p class="by"></p><ul></ul><div class="waiting"><span></span><span></span><span></span></div>`;
-    $("h2", answer).textContent = t.title;
-    const by = $<HTMLElement>(".by", answer);
-    const list = $<HTMLUListElement>("ul", answer);
-    by.textContent = `orchestrateur → ${t.key}…`;
+    const { by, list } = openAnswer(t);
+    const who = nameOf(t);
+    by.textContent = `${ui.orchestrator} → ${who}…`;
 
     // 1. L'orchestrateur délègue
-    log("orchestrateur", `reçoit « ${t.question} »`);
-    setMood(orch, "work", "délègue");
-    say(orch, `${t.key}, c'est pour toi !`);
-    log("orchestrateur", `délègue → ${t.key}`);
+    log(ui.orchestrator, ui.receives(t.question));
+    setMood(orch, "work", ui.delegates);
+    say(orch, ui.forYou(who));
+    log(ui.orchestrator, ui.delegatesTo(who));
     await send(a.edge!, false, 480, "var(--card)");
     say(orch, null);
     a.hop = 1;
 
     // 2. L'agent découpe le travail et lance ses sous-agents
     const n = t.subs.length;
-    setMood(a, "work", "découpe");
-    say(a, `je découpe en ${n} tâches`);
-    log(t.key, `découpe en ${n} sous-tâches`);
-    by.textContent = `${t.key} lance ${n} sous-agents…`;
+    setMood(a, "work", ui.splits);
+    say(a, ui.splitBubble(n));
+    log(who, ui.splitLog(n));
+    by.textContent = ui.launches(who, n);
     const subs = await spawn(a, t.subs);
-    setMood(a, "work", `attend ${n} résultats`);
+    setMood(a, "work", ui.waits(n));
     say(a, null);
 
-    // 3. Les sous-agents travaillent en parallèle ; chaque résultat s'affiche dès son retour
+    // 3. Les sous-agents travaillent en parallèle ; les résultats attendent d'arriver à l'orchestrateur
+    const results: HTMLLIElement[] = [];
     await Promise.all(
       subs.map(async ({ agent: s, def }, i) => {
         await wait(i * 70);
         await send(s.edge!, false, 340, "var(--card)");
         s.hop = 1;
-        setMood(s, "work", "cherche…");
+        setMood(s, "work", ui.searching);
         await wait(260 + Math.random() * 380);
-        setMood(s, "done", "ok");
-        await send(s.edge!, true, 320, resultColor(a.color));
-        const li = document.createElement("li");
-        li.innerHTML = `<strong></strong><span>${def.html}</span>`;
-        $("strong", li).textContent = def.title;
-        list.appendChild(li);
-        log(`${t.key}/${def.id}`, "résultat renvoyé");
+        setMood(s, "done", ui.ok);
+        await send(s.edge!, true, 320, solidColor(a.color));
+        // Les sous-agents finissent dans le désordre : chaque résultat garde sa place.
+        results[i] = resultItem(t, def, i);
+        log(`${who}/${nameOf(def)}`, ui.resultSent);
       }),
     );
-    answer.querySelector(".waiting")?.remove();
 
     // 4. L'agent rassemble et remonte la synthèse à l'orchestrateur
-    say(a, "je rassemble…");
+    say(a, ui.gathering);
     await despawn(
       a,
       subs.map((s) => s.agent),
     );
     say(a, null);
-    setMood(a, "done", "terminé");
-    await send(a.edge!, true, 420, resultColor(a.color));
+    setMood(a, "done", ui.done);
+    await send(a.edge!, true, 420, solidColor(a.color));
     orch.hop = 1;
-    setMood(orch, "idle", "prêt");
-    say(orch, "Voilà !");
+    setMood(orch, "idle", ui.ready);
+    say(orch, ui.voila);
     setTimeout(() => !busy && say(orch, null), 1300);
-    by.textContent = `${n} sous-agents · rassemblé par ${t.key} · transmis par l'orchestrateur`;
-    log("orchestrateur", "répond", true);
+
+    // 5. Seulement maintenant, la réponse se remplit, une ligne après l'autre
+    answer.querySelector(".waiting")?.remove();
+    for (const li of results) {
+      list.append(li);
+      await wait(90);
+    }
+    by.textContent = ui.synthesis(n, who, ui.orchestrator);
+    log(ui.orchestrator, ui.answers, true);
 
     consulted.add(t.key);
+    lastAnswer = t.key;
     markConsulted(a);
     scoreEl.textContent = String(consulted.size);
 
-    if (!finaleDone && (t.key === "contact" || consulted.size === topics.length)) {
-      finaleDone = true;
-      await wait(700);
-      await finale();
-    }
+    saveProgress();
     setChips(false);
     busy = false;
   }
 
-  // L'effet signature : une seule fois, quand on demande le contact ou qu'on a fait le tour.
-  async function finale() {
-    say(orch, "Merci d'être passé ! On se parle ?");
-    log("orchestrateur", "mission accomplie", true);
-    confetti(orch.x, orch.y + 10);
-    [orch, ...agents.values()].forEach((a, i) =>
-      setTimeout(() => (a.hop = 1.2), reduceMotion ? 0 : i * 110),
-    );
-    scoreEl.insertAdjacentText("afterend", " · mission accomplie");
-    await wait(1700);
-    say(orch, null);
+  // La boîte réponse, vide, aux couleurs de l'agent qui répond
+  function openAnswer(t: Topic) {
+    answer.style.setProperty("--who", solidColor(t.color));
+    answer.style.setProperty("--who-ink", inkOn(t.color));
+    answer.innerHTML = `<span class="tab">${ui.answerTab}</span><div class="answer-body"><h2></h2><p class="by"></p><div class="waiting"><span></span><span></span><span></span></div></div>`;
+    $("h2", answer).textContent = t.title;
+    const by = $<HTMLElement>(".by", answer);
+    const list = document.createElement(t.layout ? "ol" : "ul");
+    if (t.layout) list.className = t.layout;
+    by.after(list);
+    return { by, list };
   }
+
+  /* ---------- La progression survit au changement de langue ---------- */
+
+  // FR ↔ EN charge l'autre page : on garde dans l'onglet ce qui a été vu, et on le remet sans animation.
+  function saveProgress() {
+    try {
+      sessionStorage.setItem(
+        PROGRESS,
+        JSON.stringify({ consulted: [...consulted], last: lastAnswer }),
+      );
+    } catch {}
+  }
+
+  function restoreProgress() {
+    let saved: { consulted?: string[]; last?: string } = {};
+    try {
+      saved = JSON.parse(sessionStorage.getItem(PROGRESS) ?? "{}");
+    } catch {}
+    for (const key of saved.consulted ?? []) {
+      const a = agents.get(key);
+      if (!a) continue;
+      consulted.add(key);
+      markConsulted(a);
+      setMood(a, "done", ui.done);
+    }
+    scoreEl.textContent = String(consulted.size);
+    const t = topics.find((x) => x.key === saved.last);
+    if (!t) return;
+    lastAnswer = t.key;
+    setChips(false, t.key);
+    const { by, list } = openAnswer(t);
+    answer.querySelector(".waiting")?.remove();
+    list.append(...t.subs.map((def, i) => resultItem(t, def, i)));
+    by.textContent = ui.synthesis(t.subs.length, nameOf(t), ui.orchestrator);
+  }
+  restoreProgress();
 }

@@ -1,44 +1,80 @@
-/* Design tokens. Toutes les couleurs du site passent par ici, en clair et en sombre. */
+/* Design tokens. Toutes les couleurs du site passent par ici. Un seul thème : sombre, sur fond noir. */
 :root {
-  --bg: #f3f4f6;
-  --stage: #fafafb;
-  --dots: #cbd0d7;
-  --fg: #15181c;
-  --muted: #586070;
-  --card: #ffffff;
-  --line: #dce0e5;
-  --edge: #b4bbc6;
-  --outline: #15181c;
-  --orch: #15181c;
-  --c-projets: #4c7be0;
-  --c-parcours: #ec8a47;
-  --c-stack: #3aa57b;
-  --c-contact: #db6a9e;
-  --navy: #1f3b6e;
+  --bg: #000000;
+  --stage: #191c25;
+  --card: #20242f;
+  --fg: #eef0f3;
+  --muted: #a7acb8;
+  --line: #2e3442;
+  --edge: #4c5466;
+  --frame: #4f5872; /* contour des boîtes */
+  --outline: #0a0b0d; /* contour des personnages */
+  --ink: #15181c; /* texte posé sur une couleur d'agent */
+  --orch: #e9eaee; /* le t-shirt blanc d'Aurélien */
+  --hair: #5a3826;
+  --sticker: #ffffff; /* fond des logos d'écoles : reste blanc, sinon les logos noirs disparaissent */
+  --console-fg: #d3d7de;
+  --console-dim: #6f7785;
+  --console-ok: #8fd6a6;
+  --c-projets: #6a92ea;
+  --c-parcours: #f09a5e;
+  --c-stack: #4db88d;
+  --c-contact: #e57fae;
+  --navy: #2b4c86;
   --accent: #f2b93b;
+  color-scheme: dark;
+
+  /* Le cadre noir des téléphones des répliques (SpaceX, Recettes) */
+  --phone-bezel: #111214;
+
+  /* Reconstitution de l'appli SpaceX : les couleurs de son thème Flutter (spacex_theme.dart) */
+  --spx-base-a: #1a2338;
+  --spx-base-b: #0e1624;
+  --spx-surface: #1e2530;
+  --spx-card: #1e2530e6;
+  --spx-high: #2c2c2c;
+  --spx-dark: #1e1e1e;
+  --spx-primary: #005288;
+  --spx-on-primary: #000000;
+  --spx-fg: #ffffff;
+  --spx-green: #4caf50;
+  --spx-red: #f44336;
+  --spx-red-accent: #ff5252;
+  --spx-orange: #ff9800;
+  --spx-grey: #9e9e9e;
+  --spx-grey-dark: #616161;
+  --spx-blue: #2196f3;
+  --spx-violet: #6a4cff;
+  --spx-cyan: #2ec4ff;
+  --spx-sky: #33b1ff;
+  --spx-purple: #9b59ff;
+  --spx-planet-a: #ffe1a8;
+  --spx-planet-b: #b9733a;
+  --spx-ring: #bff1ff;
+  --spx-shadow: #000000;
+
+  /* Reconstitution de l'appli de recettes : ses couleurs (CustomColors.kt) et le thème Material 3 clair par défaut */
+  --rec-green: #4caf50;
+  --rec-green-pastel: #c8e6c9;
+  --rec-card-gray: #f5f5f5;
+  --rec-bg-gray: #fafafa;
+  --rec-divider: #e0e0e0;
+  --rec-surface: #fef7ff;
+  --rec-on-surface: #1d1b20;
+  --rec-on-surface-variant: #49454f;
+  --rec-card: #e6e0e9;
+  --rec-secondary: #625b71;
+  --rec-outline: #79747e;
+  --rec-primary: #6750a4;
+  --rec-error: #b3261e;
+  --rec-white: #ffffff;
+  --rec-shadow: #000000;
+
+  /* Le trait « dessiné » des boîtes */
+  --bw: 2.5px;
+  --r-hand: 14px 19px 12px 17px / 17px 12px 19px 14px;
 
   --f-ui: "Schibsted Grotesk", system-ui, sans-serif;
   --f-hand: "Patrick Hand", "Comic Sans MS", cursive;
   --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #101216;
-    --stage: #15181d;
-    --dots: #2c323b;
-    --fg: #eceef1;
-    --muted: #9aa3af;
-    --card: #1e232a;
-    --line: #2a3038;
-    --edge: #3e4650;
-    --outline: #0a0b0d;
-    --orch: #3a414b;
-    --c-projets: #6a92ea;
-    --c-parcours: #f09a5e;
-    --c-stack: #4db88d;
-    --c-contact: #e57fae;
-    --navy: #2b4c86;
-    color-scheme: dark;
-  }
 }

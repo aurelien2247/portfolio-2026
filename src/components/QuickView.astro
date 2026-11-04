@@ -1,52 +1,192 @@
 ---
-// Version rapide pour les recruteurs pressés : toutes les réponses d'un coup, sans animation.
+// Version rapide pour les recruteurs pressés : tout sur une page qu'on lit en diagonale.
+// Contact d'abord, puis une ligne par projet (le détail reste dans les fiches de l'arbre).
 // Visible par défaut, donc lisible même sans JavaScript ; le script de la page la masque au démarrage.
-import { topics } from "../data/agents";
+// Ses images sont en loading="lazy" : tant qu'elle est cachée, le navigateur ne les télécharge pas.
+import {
+  EMAIL,
+  GITHUB,
+  LINKEDIN,
+  inkOn,
+  solidColor,
+  stackIcons,
+  type Topic,
+} from "../data/agents";
+import { getTopics } from "../data/content";
+import { techName } from "../data/tech-names";
+import { ui as uis, type Lang } from "../i18n";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const ui = uis[lang];
+const topics = getTopics(lang);
+const topic = (key: string) => topics.find((t) => t.key === key)!;
+const contact = topic("contact");
+const parcours = topic("parcours");
+const projets = topic("projets");
+const stack = topic("stack");
+const perso = topic("perso");
+// Le parcours en une ligne par étape, avec l'alternance (tirée de la fiche DGFiP) sous l'école
+const dgfip = projets.subs.find((s) => s.id === "dgfip")!;
+const [ecole, ...avant] = parcours.subs;
+const timeline = [
+  { when: ecole.when, title: ecole.title, detail: ecole.place, badge: ecole.badge },
+  { when: dgfip.when, title: dgfip.place, detail: dgfip.badge },
+  ...avant.map((s) => ({ when: s.when, title: s.title, detail: s.place, badge: s.badge })),
+];
+const dispo = contact.subs.find((s) => s.id === "dispo")!;
+
+const who = (t: Topic) => `--who: ${solidColor(t.color)}; --who-ink: ${inkOn(t.color)}`;
 ---
 
-<section class="quick" id="quick" aria-labelledby="quick-title">
-  <h2 id="quick-title">Aurélien Moignet, en bref</h2>
-  <div class="grid">
-    {topics.map((t) => (
-      <div>
-        <h3>{t.title}</h3>
-        <ul>
-          {t.subs.map((s) => (
-            <li>
-              <strong>{s.title}</strong>
-              <span set:html={s.html} />
-            </li>
-          ))}
-        </ul>
+<section class="quick" id="quick" aria-label={ui.quickLabel}>
+  <div class="box contact" style={who(contact)}>
+    <h2 class="tab">{contact.title}</h2>
+    <p set:html={dispo.html} />
+    <ul class="links">
+      <li>
+        <a class="btn" href={`mailto:${EMAIL}`}>
+          {EMAIL}
+        </a>
+      </li>
+      <li>
+        <a class="btn" href={LINKEDIN}>
+          LinkedIn
+        </a>
+      </li>
+      <li>
+        <a class="btn" href={GITHUB}>
+          GitHub
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="box projets" style={who(projets)}>
+    <h2 class="tab">{projets.title}</h2>
+    <ul>
+      {projets.subs.map((p) => (
+        <li>
+          {p.logo && <img loading="lazy" class="logo" src={p.logo.src} alt="" width="36" height="36" />}
+          <div>
+            <h3>{p.title}</h3>
+            <p class="meta">{[p.place ?? p.org, p.when, p.badge].filter(Boolean).join(" · ")}</p>
+            <p>{p.short}</p>
+            <p class="techs">
+              {p.stack?.map((t) =>
+                stackIcons[t] ? (
+                  <span class="tech" data-name={techName(t, lang)} tabindex="0">
+                    <img loading="lazy" src={stackIcons[t].src} alt={techName(t, lang)} width="24" height="24" />
+                  </span>
+                ) : (
+                  <span class="word">{techName(t, lang)}</span>
+                ),
+              )}
+              {p.repo && <a href={p.repo}>{ui.code}</a>}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <div class="box parcours" style={who(parcours)}>
+    <h2 class="tab">{parcours.title}</h2>
+    <ul>
+      {timeline.map((r) => (
+        <li>
+          <span class="meta">{r.when}</span>
+          <strong>{r.title}</strong> · {r.detail}
+          {r.badge && <span class="meta"> · {r.badge}</span>}
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <div class="box stack" style={who(stack)}>
+    <h2 class="tab">{stack.title}</h2>
+    {stack.subs.map((s) => (
+      <div class="group">
+        <h3>{s.title}</h3>
+        <p class="techs">
+          {s.stack?.map((t) =>
+            stackIcons[t] ? (
+              <span class="tech" data-name={techName(t, lang)} tabindex="0">
+                <img loading="lazy" src={stackIcons[t].src} alt={techName(t, lang)} width="28" height="28" />
+              </span>
+            ) : (
+              <span class="word">{techName(t, lang)}</span>
+            ),
+          )}
+        </p>
       </div>
     ))}
+  </div>
+
+  <div class="box perso" style={who(perso)}>
+    <h2 class="tab">{perso.title}</h2>
+    <ul>
+      {perso.subs.map((s) => (
+        <li>
+          <strong>{s.title}.</strong> <span set:html={s.html} />
+        </li>
+      ))}
+    </ul>
   </div>
 </section>
 
 <style>
+  /* Une colonne principale (projets) et une colonne de côté ; sur téléphone, tout s'empile */
   .quick {
-    background: var(--card);
-    border: 1.5px solid var(--line);
-    border-radius: 16px;
-    padding: 28px clamp(18px, 4vw, 40px) 36px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    grid-template-areas:
+      "contact contact"
+      "projets parcours"
+      "projets stack"
+      "projets perso";
+    grid-template-rows: auto auto auto 1fr;
+    gap: 30px 22px;
+    align-items: start;
+  }
+  .contact {
+    grid-area: contact;
+  }
+  .projets {
+    grid-area: projets;
+  }
+  .parcours {
+    grid-area: parcours;
+  }
+  .stack {
+    grid-area: stack;
+  }
+  .perso {
+    grid-area: perso;
+  }
+  @media (max-width: 820px) {
+    .quick {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: "contact" "parcours" "projets" "stack" "perso";
+      grid-template-rows: none;
+    }
+  }
+
+  .box {
+    padding: 26px 18px 18px;
   }
   h2 {
-    margin: 0 0 22px;
-    font-weight: 800;
-    font-size: 32px;
-    letter-spacing: -0.02em;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 28px 40px;
+    margin: 0;
   }
   h3 {
-    margin: 0 0 10px;
-    font: 500 11px/1 var(--f-mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  p {
+    margin: 0;
   }
   ul {
     margin: 0;
@@ -56,12 +196,100 @@ import { topics } from "../data/agents";
     flex-direction: column;
     gap: 10px;
   }
-  li span {
-    display: block;
+  .meta {
+    font: 12px/1.5 var(--f-mono);
     color: var(--muted);
+  }
+
+  .contact {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px 24px;
+  }
+  .contact .links {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .contact .btn {
+    display: inline-block;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  .projets ul {
+    gap: 18px;
+  }
+  .projets li {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .projets .logo {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: var(--fg);
+    border: 2px solid var(--frame);
+  }
+  .projets li div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  .projets li p:not(.meta):not(.techs) {
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  .techs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .tech img {
+    display: block;
+    border-radius: 6px;
+  }
+  .word {
+    font: 11px/1 var(--f-mono);
+    border: 2px solid var(--frame);
+    border-radius: 5px 6px 4px 6px;
+    padding: 5px 6px 4px;
+  }
+  .techs a {
+    font: 12px var(--f-mono);
+    color: var(--fg);
+    margin-left: 4px;
+    text-decoration-thickness: 2px;
+  }
+
+  .parcours li {
+    font-size: 15px;
+  }
+  .parcours .meta:first-child {
+    display: block;
+  }
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .stack .group h3 {
     font-size: 14px;
   }
-  li :global(a) {
+  .perso li {
+    font-size: 15px;
+    color: var(--muted);
+  }
+  .perso strong {
     color: var(--fg);
   }
 </style>

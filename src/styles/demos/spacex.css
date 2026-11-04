@@ -1,0 +1,729 @@
+/* Chargé avec la démo, quand sa fiche s'ouvre (voir projects.ts). */
+
+/* Réplique de l'appli SpaceX (Flutter, Material 3, thème sombre). L'écran fait 360 × 760 dp
+   comme un vrai téléphone, et `zoom` le réduit : toutes les tailles ci-dessous sont celles du code Dart. */
+.agent-tree .spx {
+  --z: 0.72;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.agent-tree .spx-phone {
+  border: 9px solid var(--phone-bezel);
+  border-radius: 34px;
+  overflow: hidden;
+  background: var(--phone-bezel);
+}
+.agent-tree .spx-screen {
+  position: relative;
+  width: 360px;
+  height: 760px;
+  zoom: var(--z);
+  overflow: hidden;
+  color: color-mix(in srgb, var(--spx-fg) 87%, transparent);
+  font:
+    14px/1.35 "Roboto Condensed",
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.25px;
+}
+.agent-tree .spx-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.agent-tree .spx-bg .base-a {
+  stop-color: var(--spx-base-a);
+}
+.agent-tree .spx-bg .base-b {
+  stop-color: var(--spx-base-b);
+}
+.agent-tree .spx-bg .star,
+.agent-tree .spx-bg .halo {
+  fill: var(--spx-fg);
+}
+.agent-tree .spx-bg .clear,
+.agent-tree .spx-bg .n1-a {
+  stop-color: var(--spx-violet);
+  stop-opacity: 0;
+}
+.agent-tree .spx-bg .n1-b {
+  stop-color: var(--spx-violet);
+  stop-opacity: 0.14;
+}
+.agent-tree .spx-bg .n1-c {
+  stop-color: var(--spx-cyan);
+  stop-opacity: 0.06;
+}
+.agent-tree .spx-bg .n2-b {
+  stop-color: var(--spx-sky);
+  stop-opacity: 0.12;
+}
+.agent-tree .spx-bg .n3-b {
+  stop-color: var(--spx-purple);
+  stop-opacity: 0.1;
+}
+.agent-tree .spx-bg .planet-a {
+  stop-color: var(--spx-planet-a);
+}
+.agent-tree .spx-bg .planet-b {
+  stop-color: var(--spx-planet-b);
+}
+.agent-tree .spx-bg .shade {
+  stop-color: var(--spx-shadow);
+  stop-opacity: 0.25;
+}
+.agent-tree .spx-bg .ring {
+  stop-color: var(--spx-ring);
+  stop-opacity: 0.6;
+}
+.agent-tree .spx-bg .ring-blur {
+  filter: blur(1.5px);
+}
+.agent-tree .spx-cam {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  translate: -50% 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--phone-bezel);
+  z-index: 5;
+}
+.agent-tree .spx-route {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+.agent-tree .spx-route.is-entering {
+  animation: spx-in 0.25s ease-out both;
+}
+@keyframes spx-in {
+  from {
+    opacity: 0;
+    translate: 0 24px;
+  }
+}
+/* Remise à zéro des boutons de l'appli. :where() lui donne une spécificité nulle :
+   n'importe quelle classe de bouton passe devant, sans. */
+:where(.agent-tree .spx button) {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.agent-tree .spx .mi {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  fill: currentColor;
+}
+.agent-tree .spx .mi.ok {
+  color: var(--spx-green);
+}
+.agent-tree .spx .mi.ko {
+  color: var(--spx-red);
+}
+.agent-tree .spx .mi.fav {
+  color: var(--spx-red-accent);
+}
+.agent-tree .spx .mi.unknown {
+  color: var(--spx-grey);
+}
+.agent-tree .spx :is(h1, h2, h3) {
+  margin: 0;
+  color: var(--spx-fg);
+}
+
+/* AppBar : fond surface, titre en Rajdhani */
+.agent-tree .spx-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 64px;
+  padding: 28px 16px 0;
+  background: var(--spx-surface);
+  font:
+    600 24px "Rajdhani",
+    sans-serif;
+}
+.agent-tree .spx-bar h1 {
+  font: inherit;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.agent-tree .spx-bar:has([data-back]) {
+  padding-left: 4px;
+}
+.agent-tree .spx-logo {
+  font:
+    700 28px "Rajdhani",
+    sans-serif;
+  letter-spacing: 4px;
+  color: var(--spx-fg);
+}
+.agent-tree .spx-logo b {
+  letter-spacing: 0;
+  color: var(--spx-primary);
+}
+.agent-tree .spx-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: 50%;
+}
+.agent-tree .spx-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-bottom: 88px;
+}
+
+/* Onboarding : TabBar, une diapo, Skip / Next */
+.agent-tree .spx-bar.is-tabs {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+.agent-tree .spx-bar.is-tabs h1 {
+  padding: 0 16px 16px;
+}
+.agent-tree .spx .spx-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.agent-tree .spx-tabs button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 0 9px;
+  border-bottom: 3px solid transparent;
+  font:
+    500 14px "Roboto Condensed",
+    sans-serif;
+  color: var(--spx-fg);
+}
+.agent-tree .spx-tabs button[aria-current="true"] {
+  color: var(--spx-primary);
+  border-bottom-color: var(--spx-primary);
+}
+.agent-tree .spx-slide {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+.agent-tree .spx-slide .mi.big {
+  width: 96px;
+  height: 96px;
+  color: var(--spx-fg);
+}
+.agent-tree .spx-slide h2 {
+  padding-top: 24px;
+  font:
+    400 24px "Roboto Condensed",
+    sans-serif;
+}
+.agent-tree .spx-slide p {
+  margin: 12px 0 0;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+}
+.agent-tree .spx-onboard-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 8px 16px 24px;
+}
+.agent-tree .spx-outlined,
+.agent-tree .spx-filled {
+  height: 40px;
+  border-radius: 20px;
+  text-align: center;
+  font:
+    500 14px "Roboto Condensed",
+    sans-serif;
+}
+.agent-tree .spx-outlined {
+  border: 1px solid var(--spx-fg);
+  color: var(--spx-primary);
+}
+.agent-tree .spx-filled {
+  background: var(--spx-primary);
+  color: var(--spx-on-primary);
+}
+
+/* Accueil : carrousel des lancements à venir, puis la liste (ou la grille) des passés */
+.agent-tree .spx-h {
+  padding: 16px 16px 8px;
+  font:
+    700 28px "Rajdhani",
+    sans-serif;
+  letter-spacing: 0.5px;
+}
+.agent-tree .spx-carousel {
+  display: flex;
+  height: 236px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding: 0 18px;
+  scroll-padding: 0 18px;
+}
+.agent-tree .spx-up {
+  flex: 0 0 324px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin: 8px;
+  overflow: hidden;
+  scroll-snap-align: start;
+  border-radius: 12px;
+  background: var(--spx-card);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--spx-shadow) 40%, transparent);
+}
+.agent-tree .spx-up-media {
+  flex: 1;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  background: var(--spx-primary);
+  color: var(--spx-fg);
+}
+.agent-tree .spx-up-media .mi {
+  width: 64px;
+  height: 64px;
+}
+.agent-tree .spx-up-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+}
+.agent-tree .spx-up-text b {
+  font:
+    600 20px "Rajdhani",
+    sans-serif;
+  color: var(--spx-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.agent-tree .spx small {
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  color: color-mix(in srgb, var(--spx-fg) 60%, transparent);
+}
+.agent-tree .spx-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+.agent-tree .spx-dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--spx-fg) 20%, transparent);
+  transition: width 0.25s;
+}
+.agent-tree .spx-dots i[aria-current="true"] {
+  width: 24px;
+  background: var(--spx-primary);
+}
+.agent-tree .spx-row {
+  display: flex;
+  align-items: center;
+  padding-right: 16px;
+}
+.agent-tree .spx-row .spx-h {
+  flex: 1;
+}
+.agent-tree .spx-tile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 88px;
+  padding: 8px 12px 8px 16px;
+}
+.agent-tree .spx-tile + .spx-tile {
+  border-top: 1px solid var(--spx-fg);
+}
+.agent-tree .spx-tile-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.agent-tree .spx-tile-lead {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  flex: none;
+  padding: 6px;
+  border-radius: 6px;
+  background: var(--spx-surface);
+}
+.agent-tree .spx-tile-lead img,
+.agent-tree .spx-cell-media img,
+.agent-tree .spx-up-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+.agent-tree .spx-tile-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.agent-tree .spx-tile-text b {
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  color: color-mix(in srgb, var(--spx-fg) 87%, transparent);
+}
+.agent-tree .spx-tile-text small {
+  font-size: 14px;
+  color: var(--spx-fg);
+}
+.agent-tree .spx-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px;
+}
+.agent-tree .spx-card {
+  position: relative;
+  margin: 4px;
+  border-radius: 12px;
+  background: var(--spx-card);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--spx-shadow) 45%, transparent);
+}
+.agent-tree .spx-cell {
+  aspect-ratio: 0.75;
+  overflow: hidden;
+}
+.agent-tree .spx-cell-main {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  height: 100%;
+}
+.agent-tree .spx-cell-media {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--spx-surface);
+}
+/* L'écusson tient dans la zone 16:9, avec 8 dp de marge */
+.agent-tree .spx-cell-media img {
+  position: absolute;
+  inset: 8px;
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
+}
+.agent-tree .spx-cell-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  min-width: 0;
+}
+.agent-tree .spx-cell-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.agent-tree .spx-cell-title b {
+  flex: 1;
+  font-size: 16px;
+  color: var(--spx-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.agent-tree .spx .mi.small {
+  width: 16px;
+  height: 16px;
+}
+.agent-tree .spx-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.agent-tree .spx-cell-fav {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  padding: 6px;
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--spx-shadow) 35%, transparent);
+  color: var(--spx-fg);
+}
+.agent-tree .spx-fab {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--spx-primary);
+  color: var(--spx-on-primary);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--spx-shadow) 45%, transparent);
+}
+
+/* Fiche d'un lancement : photos (ou écusson), puis les cartes */
+.agent-tree .spx-media {
+  position: relative;
+  height: 300px;
+}
+.agent-tree .spx-photos {
+  display: flex;
+  height: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.agent-tree .spx-photos img {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  scroll-snap-align: start;
+}
+.agent-tree .spx-media-fade {
+  position: absolute;
+  inset: auto 0 0;
+  height: 80px;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--spx-shadow) 70%, transparent),
+    transparent
+  );
+  pointer-events: none;
+}
+.agent-tree .spx-dots.on-photo {
+  position: absolute;
+  inset: auto 0 8px;
+  pointer-events: none;
+}
+.agent-tree .spx-dots.on-photo i:not([aria-current="true"]) {
+  background: color-mix(in srgb, var(--spx-fg) 50%, transparent);
+}
+.agent-tree .spx-count {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--spx-shadow) 60%, transparent);
+  color: var(--spx-fg);
+  font-weight: 700;
+}
+.agent-tree .spx-media.is-patch {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(
+    color-mix(in srgb, var(--spx-primary) 30%, transparent),
+    color-mix(in srgb, var(--spx-primary) 10%, transparent)
+  );
+}
+.agent-tree .spx-media.is-patch span {
+  padding: 32px;
+  border-radius: 16px;
+  background: var(--spx-surface);
+}
+.agent-tree .spx-media.is-patch img {
+  display: block;
+  height: 180px;
+}
+.agent-tree .spx-pad {
+  padding: 16px;
+}
+.agent-tree .spx-title {
+  font:
+    400 24px "Roboto Condensed",
+    sans-serif;
+}
+.agent-tree .spx-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 12px;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+}
+.agent-tree .spx-status small {
+  margin-left: auto;
+}
+.agent-tree .spx-pad .spx-card {
+  margin: 0 0 16px;
+  padding: 16px;
+  border-radius: 16px;
+}
+.agent-tree .spx-card h3 {
+  font:
+    700 20px "Rajdhani",
+    sans-serif;
+  letter-spacing: 0.15px;
+}
+.agent-tree .spx-card > h3 {
+  padding-bottom: 12px;
+}
+.agent-tree .spx-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--spx-primary);
+}
+.agent-tree .spx-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.agent-tree .spx-info .mi {
+  width: 20px;
+  height: 20px;
+  color: var(--spx-primary);
+}
+.agent-tree .spx-info div {
+  display: flex;
+  flex-direction: column;
+}
+.agent-tree .spx-info small {
+  color: var(--spx-fg);
+}
+.agent-tree .spx-info span {
+  font-size: 16px;
+  letter-spacing: 0.5px;
+}
+.agent-tree .spx-info.green span,
+.agent-tree .spx-info.green .mi {
+  color: var(--spx-green);
+}
+.agent-tree .spx-info.orange span,
+.agent-tree .spx-info.orange .mi {
+  color: var(--spx-orange);
+}
+.agent-tree .spx-sub {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px;
+  padding: 12px;
+  border: 1px solid var(--spx-fg);
+  border-radius: 12px;
+  background: var(--spx-high);
+}
+.agent-tree p.spx-sub {
+  display: block;
+  margin: 0;
+  line-height: 1.5;
+}
+.agent-tree .spx-sub-icon {
+  display: grid;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--spx-dark);
+  color: var(--spx-on-primary);
+}
+.agent-tree .spx-sub-icon .mi {
+  width: 20px;
+  height: 20px;
+}
+.agent-tree .spx-sub div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.agent-tree .spx-sub b {
+  font:
+    500 16px "Rajdhani",
+    sans-serif;
+  color: var(--spx-fg);
+  overflow-wrap: anywhere;
+}
+.agent-tree .spx-landing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+.agent-tree .spx-landing .mi {
+  width: 16px;
+  height: 16px;
+}
+.agent-tree .spx-landing.ok {
+  color: var(--spx-green);
+}
+.agent-tree .spx-landing.ko {
+  color: var(--spx-red);
+}
+.agent-tree .spx-landing.unknown {
+  color: var(--spx-grey);
+}
+.agent-tree .spx-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.agent-tree .spx-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--spx-fg);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--spx-shadow) 40%, transparent);
+}
+.agent-tree .spx-link .mi {
+  width: 16px;
+  height: 16px;
+}
+.agent-tree .spx-link.red {
+  background: var(--spx-red);
+}
+.agent-tree .spx-link.blue {
+  background: var(--spx-blue);
+}
+.agent-tree .spx-link.grey {
+  background: var(--spx-grey-dark);
+}
+@media (max-width: 720px), (max-height: 760px) {
+  .agent-tree .spx {
+    --z: 0.62;
+  }
+}
