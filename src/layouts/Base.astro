@@ -1,6 +1,8 @@
 ---
 import "../styles/global.css";
-import { HOME, LANGS, type Lang } from "../i18n";
+import photo from "../assets/aurelien.jpg";
+import { GITHUB, LINKEDIN } from "../data/agents";
+import { HOME, LANGS, ui, type Lang } from "../i18n";
 
 interface Props {
   lang: Lang;
@@ -12,6 +14,17 @@ const { lang, title, description } = Astro.props;
 // Google veut des adresses complètes pour les versions de langue : elles partent de `site`
 // (astro.config.mjs). Tant qu'il n'est pas renseigné, on garde des chemins relatifs.
 const url = (l: Lang) => (Astro.site ? new URL(HOME[l], Astro.site).href : HOME[l]);
+
+// Ma « carte de visite » pour les moteurs de recherche : relie mon nom à ce site et à mes profils.
+const person = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: "Aurélien Moignet",
+  url: url("fr"),
+  image: new URL(photo.src, Astro.site ?? Astro.url).href,
+  jobTitle: ui[lang].role.replace(/\.$/, ""),
+  sameAs: [LINKEDIN, GITHUB],
+});
 ---
 
 <html lang={lang}>
@@ -55,6 +68,7 @@ const url = (l: Lang) => (Astro.site ? new URL(HOME[l], Astro.site).href : HOME[
     ))}
     <link rel="alternate" hreflang="x-default" href={url("fr")} />
     {Astro.site && <link rel="canonical" href={url(lang)} />}
+    <script type="application/ld+json" set:html={person} />
     <!-- L'icône de l'onglet : ma photo en rond ; en carré pour l'écran d'accueil d'un iPhone -->
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
