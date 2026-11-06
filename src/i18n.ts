@@ -90,6 +90,8 @@ const fr = {
   // La version rapide
   quickLabel: "Version rapide",
   code: "code ↗",
+  cv: "CV (PDF)",
+  cvLink: "Mon CV en PDF",
 };
 
 const en: typeof fr = {
@@ -168,6 +170,8 @@ const en: typeof fr = {
 
   quickLabel: "Quick view",
   code: "code ↗",
+  cv: "Resume (PDF)",
+  cvLink: "My resume as a PDF",
 };
 
 export const ui: Record<Lang, typeof fr> = { fr, en };

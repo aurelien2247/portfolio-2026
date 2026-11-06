@@ -152,6 +152,17 @@ export const stackIcons: Record<string, ImageMetadata> = {
 export const EMAIL = "aurelien.moignet@imt-atlantique.net";
 export const LINKEDIN = "https://www.linkedin.com/in/aur%C3%A9lien-moignet-a065921b4/";
 export const GITHUB = "https://github.com/aurelien2247";
+/** Le CV en PDF, une version par langue, dans public/. Ce sont les versions sans le téléphone :
+ *  la source LaTeX est hors du dépôt (~/Projects/cv, fichiers cv-site.tex et cv-en-site.tex).
+ *  `download` : le nom du fichier téléchargé. */
+export const CV = {
+  fr: { href: "/cv-aurelien-moignet.pdf", download: "CV-Aurelien-Moignet.pdf" },
+  en: { href: "/resume-aurelien-moignet.pdf", download: "Resume-Aurelien-Moignet.pdf" },
+};
+/** Les attributs d'un lien vers le CV : il se télécharge ; si le navigateur ne sait pas télécharger
+ *  (certains téléphones), il s'ouvre dans un nouvel onglet, et le portfolio reste ouvert. */
+export const cvLink = (lang: keyof typeof CV) =>
+  `href="${CV[lang].href}" download="${CV[lang].download}" target="_blank" rel="noopener"`;
 
 /** La bulle du « ? » après les pastilles : dit que les agents de la page sont une mise en scène. */
 export const ABOUT_DEMO =
@@ -206,7 +217,8 @@ export const topics: Topic[] = [
       {
         id: "dgfip",
         title: "Système multi-agents souverain",
-        short: "Une extension VS Code où des agents experts, pilotés par un orchestrateur, se partagent le travail sur des LLM hébergés en interne.",
+        short:
+          "Une extension VS Code où des agents experts, pilotés par un orchestrateur, se partagent le travail sur des LLM hébergés en interne.",
         org: "Direction Générale des Finances Publiques",
         logo: dgfipLogo,
         place: "DGFiP, Nantes",
@@ -229,7 +241,8 @@ export const topics: Topic[] = [
       {
         id: "p3",
         title: "Intégration Mews PMS",
-        short: "Seul en R&D, j'ai branché le moteur de réservation sur Mews : réservation, paiement conforme PCI, check-in et check-out en ligne.",
+        short:
+          "Seul en R&D, j'ai branché le moteur de réservation sur Mews : réservation, paiement conforme PCI, check-in et check-out en ligne.",
         org: "P3 Hotel Software",
         logo: p3Logo,
         place: "P3 Hotel Software, Dublin",
@@ -250,7 +263,8 @@ export const topics: Topic[] = [
       {
         id: "smash",
         title: "Smash",
-        short: "Un jeu de combat 8 bits à deux joueurs, en bare-metal sur Sextant, un petit noyau d'école.",
+        short:
+          "Un jeu de combat 8 bits à deux joueurs, en bare-metal sur Sextant, un petit noyau d'école.",
         org: "IMT Atlantique",
         logo: imtRoundLogo,
         badge: "projet d'école",
@@ -263,7 +277,8 @@ export const topics: Topic[] = [
       {
         id: "meetmagnet",
         title: "Scraper universel",
-        short: "Chef de projet d'une équipe de six : un scraper universel guidé par IA, en production chez MeetMagnet.",
+        short:
+          "Chef de projet d'une équipe de six : un scraper universel guidé par IA, en production chez MeetMagnet.",
         org: "MeetMagnet",
         logo: meetmagnetLogo,
         place: "MeetMagnet",
@@ -288,7 +303,8 @@ export const topics: Topic[] = [
       {
         id: "imtventaire",
         title: "IMT'ventaire",
-        short: "À quatre, en sprints agiles : une appli web d'inventaire par code-barres, en production à l'IMT.",
+        short:
+          "À quatre, en sprints agiles : une appli web d'inventaire par code-barres, en production à l'IMT.",
         org: "IMT Atlantique",
         logo: imtventaireLogo,
         when: "2025",
@@ -330,7 +346,8 @@ export const topics: Topic[] = [
       {
         id: "recettes",
         title: "Appli de recettes",
-        short: "Une appli Android de recettes en couches, avec le pattern MVI. Le but : apprendre Kotlin.",
+        short:
+          "Une appli Android de recettes en couches, avec le pattern MVI. Le but : apprendre Kotlin.",
         org: "IMT Atlantique",
         logo: imtRoundLogo,
         when: "2026",
@@ -444,6 +461,11 @@ export const topics: Topic[] = [
         id: "email",
         title: "E-mail",
         html: `<span class="copy"><code>${EMAIL}</code><button class="btn" type="button" data-copy="${EMAIL}">Copier</button></span>`,
+      },
+      {
+        id: "cv",
+        title: "CV",
+        html: `<a ${cvLink("fr")}>Télécharger mon CV</a>`,
       },
       {
         id: "liens",

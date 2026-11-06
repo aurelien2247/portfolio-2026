@@ -5,6 +5,7 @@ import Base from "../layouts/Base.astro";
 import AgentTree from "./AgentTree.astro";
 import QuickView from "./QuickView.astro";
 import photo from "../assets/aurelien.jpg";
+import { CV } from "../data/agents";
 import { HOME, LANGS, ui as uis, type Lang } from "../i18n";
 
 interface Props {
@@ -29,28 +30,32 @@ const ui = uis[lang];
       <div class="who">
         <h1>Aurélien Moignet</h1>
         <p>
-          <mark>{ui.role}</mark>{" "}
-          {ui.intro}
+          <mark>{ui.role}</mark> {ui.intro}
           <br />
           {ui.looking}
         </p>
+        <!-- Le CV, en discret sous la présentation : une petite feuille dessinée, comme le reste de la page -->
+        <a class="cv" {...CV[lang]} target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+            <path d="M3.5 1.5h6l3 3v10h-9z M9.5 1.5v3h3 M5.5 8h5 M5.5 10.5h5 M5.5 13h3" />
+          </svg>
+          {ui.cvLink}
+        </a>
       </div>
       <div class="tools">
         <!-- Deux liens : le choix marche sans JavaScript ; le script le retient pour les prochaines visites -->
         <nav class="lang" aria-label={ui.langLabel}>
-          {
-            LANGS.map((l) => (
-              <a
-                href={HOME[l]}
-                hreflang={l}
-                lang={l}
-                data-lang={l}
-                aria-current={l === lang ? "page" : undefined}
-              >
-                {l.toUpperCase()}
-              </a>
-            ))
-          }
+          {LANGS.map((l) => (
+            <a
+              href={HOME[l]}
+              hreflang={l}
+              lang={l}
+              data-lang={l}
+              aria-current={l === lang ? "page" : undefined}
+            >
+              {l.toUpperCase()}
+            </a>
+          ))}
         </nav>
         <button
           class="btn"
@@ -142,6 +147,28 @@ const ui = uis[lang];
   .who p {
     margin: 12px 0 0;
     font-size: 17px;
+  }
+  .cv {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 12px;
+    font: 500 13px/1 var(--f-mono);
+    color: var(--muted);
+    text-decoration: underline 1px var(--frame);
+    text-underline-offset: 4px;
+  }
+  .cv:hover {
+    color: var(--fg);
+    text-decoration-color: var(--accent);
+  }
+  .cv svg {
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
   mark {
     background: none;

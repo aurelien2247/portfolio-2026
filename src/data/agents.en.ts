@@ -2,7 +2,7 @@
 // La structure (logos, stack, liens, démos, captures) reste dans agents.ts, la source unique ;
 // content.ts fusionne les deux. Un texte absent ici garde sa version française.
 
-import { EMAIL, GITHUB, LINKEDIN, type SubAgent, type Topic } from "./agents";
+import { EMAIL, GITHUB, LINKEDIN, cvLink, type SubAgent, type Topic } from "./agents";
 
 export type SubText = Partial<
   Pick<SubAgent, "name" | "title" | "html" | "short" | "place" | "badge" | "org" | "tags">
@@ -183,7 +183,10 @@ export const topicsEn: Record<string, TopicText> = {
     question: "And outside of code?",
     title: "Outside of code",
     subs: {
-      sport: { title: "Sport", html: "15 years of football. Swimming and basketball at youth level." },
+      sport: {
+        title: "Sport",
+        html: "15 years of football. Swimming and basketball at youth level.",
+      },
       voyages: {
         name: "travel",
         title: "Travel",
@@ -208,6 +211,11 @@ export const topicsEn: Record<string, TopicText> = {
       email: {
         title: "Email",
         html: `<span class="copy"><code>${EMAIL}</code><button class="btn" type="button" data-copy="${EMAIL}">Copy</button></span>`,
+      },
+      cv: {
+        name: "resume",
+        title: "Resume",
+        html: `<a ${cvLink("en")}>Download my resume</a>`,
       },
       liens: {
         name: "links",

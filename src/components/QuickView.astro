@@ -4,6 +4,7 @@
 // Visible par défaut, donc lisible même sans JavaScript ; le script de la page la masque au démarrage.
 // Ses images sont en loading="lazy" : tant qu'elle est cachée, le navigateur ne les télécharge pas.
 import {
+  CV,
   EMAIL,
   GITHUB,
   LINKEDIN,
@@ -52,6 +53,11 @@ const who = (t: Topic) => `--who: ${solidColor(t.color)}; --who-ink: ${inkOn(t.c
         </a>
       </li>
       <li>
+        <a class="btn" {...CV[lang]} target="_blank" rel="noopener">
+          {ui.cv}
+        </a>
+      </li>
+      <li>
         <a class="btn" href={LINKEDIN}>
           LinkedIn
         </a>
@@ -69,7 +75,9 @@ const who = (t: Topic) => `--who: ${solidColor(t.color)}; --who-ink: ${inkOn(t.c
     <ul>
       {projets.subs.map((p) => (
         <li>
-          {p.logo && <img loading="lazy" class="logo" src={p.logo.src} alt="" width="36" height="36" />}
+          {p.logo && (
+            <img loading="lazy" class="logo" src={p.logo.src} alt="" width="36" height="36" />
+          )}
           <div>
             <h3>{p.title}</h3>
             <p class="meta">{[p.place ?? p.org, p.when, p.badge].filter(Boolean).join(" · ")}</p>
@@ -78,7 +86,13 @@ const who = (t: Topic) => `--who: ${solidColor(t.color)}; --who-ink: ${inkOn(t.c
               {p.stack?.map((t) =>
                 stackIcons[t] ? (
                   <span class="tech" data-name={techName(t, lang)} tabindex="0">
-                    <img loading="lazy" src={stackIcons[t].src} alt={techName(t, lang)} width="24" height="24" />
+                    <img
+                      loading="lazy"
+                      src={stackIcons[t].src}
+                      alt={techName(t, lang)}
+                      width="24"
+                      height="24"
+                    />
                   </span>
                 ) : (
                   <span class="word">{techName(t, lang)}</span>
@@ -114,7 +128,13 @@ const who = (t: Topic) => `--who: ${solidColor(t.color)}; --who-ink: ${inkOn(t.c
           {s.stack?.map((t) =>
             stackIcons[t] ? (
               <span class="tech" data-name={techName(t, lang)} tabindex="0">
-                <img loading="lazy" src={stackIcons[t].src} alt={techName(t, lang)} width="28" height="28" />
+                <img
+                  loading="lazy"
+                  src={stackIcons[t].src}
+                  alt={techName(t, lang)}
+                  width="28"
+                  height="28"
+                />
               </span>
             ) : (
               <span class="word">{techName(t, lang)}</span>
