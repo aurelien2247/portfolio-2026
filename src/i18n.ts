@@ -20,6 +20,8 @@ const fr = {
   quickOn: "Version rapide",
   quickOff: "Revenir aux agents",
   langLabel: "Langue du site",
+  ogAlt:
+    "Le portfolio d'Aurélien Moignet : son arbre d'agents animé répartit le travail entre ses sous-agents",
 
   // L'arbre
   treeLabel: "Mes agents se répartissent le travail",
@@ -105,6 +107,8 @@ const en: typeof fr = {
   quickOn: "Quick view",
   quickOff: "Back to the agents",
   langLabel: "Site language",
+  ogAlt:
+    "Aurélien Moignet's portfolio: his animated agent tree sharing the work between sub-agents",
 
   treeLabel: "My agents share the work",
   hint: "Pick a topic",

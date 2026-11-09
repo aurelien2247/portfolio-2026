@@ -150,7 +150,7 @@ export const stackIcons: Record<string, ImageMetadata> = {
 };
 
 export const EMAIL = "aurelien.moignet@imt-atlantique.net";
-export const LINKEDIN = "https://www.linkedin.com/in/aur%C3%A9lien-moignet-a065921b4/";
+export const LINKEDIN = "https://www.linkedin.com/in/aurelien-moignet/";
 export const GITHUB = "https://github.com/aurelien2247";
 /** Le CV en PDF, une version par langue, dans public/. Ce sont les versions sans le téléphone :
  *  la source LaTeX est hors du dépôt (~/Projects/cv, fichiers cv-site.tex et cv-en-site.tex).

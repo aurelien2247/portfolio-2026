@@ -69,6 +69,19 @@ const person = JSON.stringify({
     <link rel="alternate" hreflang="x-default" href={url("fr")} />
     {Astro.site && <link rel="canonical" href={url(lang)} />}
     <script type="application/ld+json" set:html={person} />
+    <!-- L'aperçu quand on partage le lien (LinkedIn, WhatsApp, Slack…) : une capture de la page en pleine
+         animation, dans la langue de la page. Sans elle, LinkedIn prenait la première image venue. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Aurélien Moignet" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={url(lang)} />
+    <meta property="og:locale" content={lang === "fr" ? "fr_FR" : "en_GB"} />
+    <meta property="og:image" content={new URL(`/og-${lang}.jpg`, Astro.site ?? Astro.url).href} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={ui[lang].ogAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
     <!-- L'icône de l'onglet : ma photo en rond ; en carré pour l'écran d'accueil d'un iPhone -->
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
